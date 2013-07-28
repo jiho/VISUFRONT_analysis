@@ -56,7 +56,9 @@ d <- read.xls("drifters.xls", na.strings="", stringsAsFactors=FALSE)
 b <- read.xls("boa.xls", na.strings="", stringsAsFactors=FALSE)
 
 # read ship trajectory from ts
-s <- read.ts(str_c("/Volumes/donnees/", format(Sys.Date(), "%Y%m%d"), ".tethys"))
+s1 <- read.ts(str_c("/Volumes/donnees/", format(Sys.Date()-1, "%Y%m%d"), ".tethys"))
+s2 <- read.ts(str_c("/Volumes/donnees/", format(Sys.Date(), "%Y%m%d"), ".tethys"))
+s <- rbind(s1,s2)
 
 # fill date
 for (i in 1:nrow(d)) {
