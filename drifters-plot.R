@@ -180,9 +180,3 @@ print(speed)
 
 message("Predicted current position")
 print(di[,c("unit", "dateTime", "latMin", "lonMin")])
-
-
-
-
-
-
