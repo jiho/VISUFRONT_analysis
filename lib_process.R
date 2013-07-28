@@ -34,8 +34,8 @@ read.ts <- function(file) {
 
 dist.from.shore <- function(lat, lon) {
 	# find the most northern-wastern point
-	pointLat <- max(lat)
-	pointLon <- min(lon)
+	pointLat <- max(lat, na.rm=TRUE)
+	pointLon <- min(lon, na.rm=TRUE)
 	
 	# compute distance from shore for all points
 	coast <- read.csv("map/gshhg_coteazur_i.csv")
