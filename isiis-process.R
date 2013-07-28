@@ -75,6 +75,8 @@ d$dateTime <- round(d$dateTimeMsec)
 d <- join(d, ts[,c("dateTime", "lat", "lon")], by="dateTime")
 
 # interpolate GPS data
+sum(is.na(d$lat))
+sum(is.na(d$lon))
 d$lat <- approx(x=as.numeric(d$dateTime), y=d$lat, xo=as.numeric(d$dateTime))$y
 d$lon <- approx(x=as.numeric(d$dateTime), y=d$lon, xo=as.numeric(d$dateTime))$y
 
@@ -90,10 +92,12 @@ d$Density <- swRho(d$Salinity.PPT., d$Temp.C., d$Pressure.dbar., eos="unesco")
 isiis <- d
 write.csv(isiis, file="isiis.csv", row.names=FALSE)
 
-transects <- read.csv("transects.csv", na.strings="", colClasses=c("character", "POSIXct", "POSIXct"))
+transects <- read.csv("transects.csv", na.strings=c("", "NA"), colClasses=c("character", "POSIXct", "POSIXct"))
 
 pdf("isiis-transects.pdf")
 d_ply(transects, ~name, function(x, data) {
+	message(x$name)
+
   # extract the portion of the data corresponding to this transect
   cData <- data[which(data$dateTime > x$dateTimeStart-5 & data$dateTime < x$dateTimeEnd+5),]
 
@@ -140,7 +144,7 @@ d_ply(transects, ~name, function(x, data) {
   
   return(NA)
 
-}, data=isiis, .progress="text")
+}, data=isiis)
 dev.off()
 
 # }
