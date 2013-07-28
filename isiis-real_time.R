@@ -45,7 +45,7 @@ real.time.plot <- function(vars=c("Temp.C", "Salinity.PPT", "Fluoro.volts", "Oxy
 
 	di <- ddply(dm, ~variable, function(x) {
 	  x <- na.omit(x[which(x$down.up=="up"),])
-	  xi <- interp.dist(x=x$distanceFromVlfr, y=x$Depth.m, z=x$value, duplicate="mean", x.step=500, y.step=2)
+	  xi <- interp.dist(x=x$distanceFromVlfr, y=x$Depth.m, z=x$value, duplicate="mean", x.step=300, y.step=1, anisotropy=1300)
 	})
 	di <- rename(di, c("x"="distance", "y"="Depth.m"))
 
@@ -53,7 +53,7 @@ real.time.plot <- function(vars=c("Temp.C", "Salinity.PPT", "Fluoro.volts", "Oxy
 	  ggplot(x, aes(x=distance, y=-Depth.m)) +
 	    # geom_point(aes(fill=value), shape=21, colour=NA, na.rm=T) +
 	    geom_tile(aes(fill=value), na.rm=T) +
-	    geom_contour(aes(z=value), colour="white", alpha=0.9, bins=5, na.rm=T) +
+	    stat_contour(aes(z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
 	    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
 	    scale_x_continuous(expand=c(0,0)) +
 	    scale_y_continuous(expand=c(0,0))
