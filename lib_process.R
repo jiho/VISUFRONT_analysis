@@ -75,6 +75,36 @@ read.isiis <- function(file) {
 	
 	return(d)
 }
+
+# Detect up and down casts in a depth yo
+detect.casts <- function(depth, order=200) {
+  # smoothing the depth profile using a moving average and find the turning points
+  
+	# smooth depths
+  library("pastecs")
+  depth_avg <- decaverage(-depth, times=3, weights=c(seq(1, order), order+1, seq(order, 1, -1)))
+  # plot(depth_avg)
+  depth_avg <- as.numeric(pastecs::extract(depth_avg, component="filtered"))
+
+  # detect turning points
+  TP <- suppressWarnings(turnpoints(depth_avg))
+  
+  # set cast numbers (different for up and down casts)
+  cast <- cumsum(TP$peaks | TP$pits) + 1
+  
+  # detect which are up and which are down casts:
+  # if the first turning point is a peak, then the first cast (and all odd casts) are upcasts
+  if ( TP$firstispeak ) {
+    # these are the types for
+    #              even  & odd   cast numbers
+    castTypes <- c("down", "up")
+  } else {
+    castTypes <- c("up", "down")
+  }
+  down.up <- castTypes[cast %% 2 + 1]
+	
+	return(data.frame(cast, down.up))
+}
 dist.from.shore <- function(lat, lon) {
 	# find the most northern-wastern point
 	pointLat <- max(lat, na.rm=TRUE)
