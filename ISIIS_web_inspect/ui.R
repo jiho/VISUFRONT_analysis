@@ -40,7 +40,7 @@ shinyUI(pageWithSidebar(
     ),
     selectInput(inputId="dist",
                 label="Distance measure",
-                choices=c("distanceFromStart", "distanceFromVlfr"),
+                choices=c("distanceFromStart", "distanceFromShore", "distanceFromVlfr"),
                 selected="distanceFromStart"
                 ),
  
