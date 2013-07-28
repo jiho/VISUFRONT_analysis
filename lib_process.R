@@ -43,6 +43,38 @@ read.ts <- function(file) {
 	return(d)
 }
 
+# Read hydrological data from ISIIS
+read.isiis <- function(file) {
+	options(digits.secs=2)  # allow split seconds
+	
+	# read the data
+  d <- read.delim(file, skip=10, fileEncoding="ISO-8859-1", encoding="UTF-8", stringsAsFactors=FALSE)
+
+  # clean names
+	# remove double dots
+  names(d) <- str_replace_all(names(d), fixed(".."), ".")
+  names(d) <- str_replace_all(names(d), fixed(".."), ".")
+	# remove dots at end of names
+  names(d) <- str_replace(names(d), "\\.$", "")
+
+  # extract date from file name
+  year <- str_sub(file, -16, -13)
+  month <- str_sub(file, -12, -11)
+  day <- str_sub(file, -10, -9)
+
+  # compute date and time
+  d$dateTimeMsec <- as.POSIXct(str_c(year, "-", month, "-", day, " ", d$Time))
+  # detect midnight shifts
+  midnightShift <- which(diff(d$dateTimeMsec) < 0)
+  if (length(midnightShift) > 0) {
+    d$dateTimeMsec[midnightShift:nrow(d)] <- d$dateTimeMsec[midnightShift:nrow(d)] + 24 * 3600
+  }
+
+  # keep important columns
+  d <- d[,c("dateTimeMsec", "Pressure.dbar", "Depth.m", "Temp.C", "Salinity.PPT", "Fluoro.volts", "Oxygen.ml.l", "Irrandiance.UE.cm")]
+	
+	return(d)
+}
 dist.from.shore <- function(lat, lon) {
 	# find the most northern-wastern point
 	pointLat <- max(lat, na.rm=TRUE)
