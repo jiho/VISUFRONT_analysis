@@ -105,8 +105,23 @@ detect.casts <- function(depth, order=200) {
 	
 	return(data.frame(cast, down.up))
 }
+
+# Compute the straight line distance from the starting point of a lat,lon trajectory
+dist.from.start <- function(lat, lon) {
+	library("oce")
+	geodDist(lat1=lat, lon1=lon, lat2=na.omit(lat)[1], lon2=na.omit(lon)[1]) * 1.852
+}
+
+# Compute the distance from Villefranche
+dist.from.villefranche <- function(lat, lon) {
+	# TODO should compensate for the length of cable put out and the angle of the cable (i.e. depth of ISIIS)
+	library("oce")
+	geodDist(lat, lon, lat2=43.70528, lon2=7.3118057) / 1.852
+}
+
+# Compute the distance from shore, for the VISUFRONT cruise only
 dist.from.shore <- function(lat, lon) {
-	# find the most northern-wastern point
+	# find the most northern-western point
 	pointLat <- max(lat, na.rm=TRUE)
 	pointLon <- min(lon, na.rm=TRUE)
 	
@@ -114,20 +129,16 @@ dist.from.shore <- function(lat, lon) {
 	coast <- read.csv("map/gshhg_coteazur_i.csv")
 	
 	# find the closest point on the coast
+	# TODO should find the point of intersection between the coast and the axis of the transect
 	library("oce")
 	dists <- geodDist(lat1=coast$lat, lon1=coast$lon, lat2=pointLat, lon2=pointLon)
 	minIdx <- which.min(dists)
 	refLat <- coast$lat[minIdx]
 	refLon <- coast$lon[minIdx]
 	
-	# now compute distance
+	# compute distances from this point to every point in the track
+	# TODO should compensate for the length of cable put out and the angle of the cable (i.e. depth of ISIIS)
 	dists <- geodDist(lat1=lat, lon1=lon, lat2=refLat, lon2=refLon)
 	
 	return(dists)
 }
-
-
-
-
-
-
