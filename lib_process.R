@@ -14,8 +14,10 @@ read.ts <- function(file) {
   d <- read.table(file, sep="\t", header=FALSE, col.names=colNames)
   
   # create date+time in R format
+  year <- str_sub(file, -15, -12)
+  month <- str_sub(file, -11, -10)
   day <- str_sub(file, -9, -8)
-  midnight <- as.POSIXct(str_c("2013-07-", day, " 00:00:01"))
+  midnight <- as.POSIXct(str_c(year, "-", month, "-", day, " 00:00:01"))
   d$dateTime <- midnight + d$timeUTC
   # convert into local time
   d$dateTime <- d$dateTime + 2*3600  
