@@ -54,7 +54,7 @@ transects <- read.csv("transects.csv", na.strings=c("", "NA"), colClasses=c("cha
 
 pdf("ts-transects.pdf")
 d_ply(transects, ~name, function(x, data) {
-	print(x$name[1])
+	message(x$name)
 	
   # extract the portion of the GPS track
   cData <- data[data$dateTime > x$dateTimeStart-5 & data$dateTime < x$dateTimeEnd+5,]
@@ -75,6 +75,8 @@ d_ply(transects, ~name, function(x, data) {
   }
 }, data=ts)
 dev.off()
+
+# system("open ts-transects.pdf")
 
 # }
 
