@@ -78,7 +78,7 @@ transects <- read.csv("transects.csv", na.strings=c("", "NA"), colClasses=c("cha
 pdf("isiis-transects.pdf")
 d_ply(transects, ~name, function(x, data) {
 	message(x$name)
-	
+
   # extract the appropriate portion of the data
   cData <- data[which(data$dateTime > x$dateTimeStart-5 & data$dateTime < x$dateTimeEnd+5),]
 
@@ -87,20 +87,20 @@ d_ply(transects, ~name, function(x, data) {
     cData$distanceFromStart <- dist.from.start(lat=cData$lat, lon=cData$lon)
     cData$distanceFromVlfr <- dist.from.villefranche(lat=cData$lat, lon=cData$lon)
     cData$distanceFromShore <- dist.from.shore(lat=cData$lat, lon=cData$lon)
-    
+
     # detect up and down casts
 		casts <- detect.casts(cData$Depth.m)
 		cData <- cbind(cData, casts)
-   
+
     # plot to check
     print(ggplot(cData) + geom_point(aes(x=distanceFromShore, y=-Depth.m, colour=down.up), na.rm=T) + ggtitle(x$name))
-  
+
     # store data file
     dir.create(str_c("transects/", x$name), showWarnings=FALSE, recursive=TRUE)
     dataName <- deparse(substitute(data))
-    write.csv(cData, file=str_c("transects/", x$name, "/", dataName, ".csv"), row.names=FALSE)    
+    write.csv(cData, file=str_c("transects/", x$name, "/", dataName, ".csv"), row.names=FALSE)
   }
-  
+
 	return(invisible(NULL))
 }, data=isiis)
 dev.off()

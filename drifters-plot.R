@@ -57,7 +57,7 @@ d$timeLabel <- format(d$dateTime, format="%H:%M")
 # 	ship 	is the ship track form the TS
 #		lag		is a time lag in hours
 di <- ddply(d, ~unit, function(x, ship, lag=0) {
-	target <- ship$dateTime[nrow(ship)] + (lag * 3600) 
+	target <- ship$dateTime[nrow(ship)] + (lag * 3600)
 	iLat <- spline(x=x$dateTime, y=x$lat, xout=target, method="natural")$y
 	iLon <- spline(x=x$dateTime, y=x$lon, xout=target, method="natural")$y
 	return(data.frame(dateTime=target, lat=iLat, lon=iLon))

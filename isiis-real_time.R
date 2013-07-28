@@ -59,7 +59,7 @@ real.time.plot <- function(vars=c("Temp.C", "Salinity.PPT", "Fluoro.volts", "Oxy
 	    scale_y_continuous(expand=c(0,0))
 	})
 
-	do.call(grid.arrange, c(plots,list(ncol=1)))	
+	do.call(grid.arrange, c(plots,list(ncol=1)))
 }
 
 while ( 1 == 1 ) {

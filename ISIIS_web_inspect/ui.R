@@ -10,7 +10,6 @@
 # For subsequent requests, the code hasn't changed since the last page load, it is not re-run (it is probably cached somehow by Shiny)
 transects <- list.files("../transects")
 
-
 # Define UI for the application (menus, checkboxes, etc.)
 shinyUI(pageWithSidebar(
 
@@ -38,13 +37,13 @@ shinyUI(pageWithSidebar(
                            )
       )
     ),
+
     selectInput(inputId="dist",
                 label="Distance measure",
                 choices=c("distanceFromStart", "distanceFromShore", "distanceFromVlfr"),
                 selected="distanceFromStart"
                 ),
- 
-  
+
     sliderInput(inputId="xstep",
                 label="Distance step (m)",
                 min=100, max=2000,
@@ -62,7 +61,7 @@ shinyUI(pageWithSidebar(
 
     # Button to force manual reload of the plot
     submitButton("Redraw plot"),
-    
+
     # make sure we finish the panel correctly
     div(style="height: 1px")
   ),

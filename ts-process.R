@@ -56,25 +56,25 @@ transects <- read.csv("transects.csv", na.strings=c("", "NA"), colClasses=c("cha
 pdf("ts-transects.pdf")
 d_ply(transects, ~name, function(x, data) {
 	message(x$name)
-	
+
   # extract the appropriate portion of the data
   cData <- data[which(data$dateTime > x$dateTimeStart-5 & data$dateTime < x$dateTimeEnd+5),]
 
-  if (nrow(cData) >= 1) {  
+  if (nrow(cData) >= 1) {
     # compute distance from first point and from a reference point
     cData$distanceFromStart <- dist.from.start(lat=cData$lat, lon=cData$lon)
     cData$distanceFromVlfr <- dist.from.villefranche(lat=cData$lat, lon=cData$lon)
     cData$distanceFromShore <- dist.from.shore(lat=cData$lat, lon=cData$lon)
-  
+
 	  # plot to check
     print(ggplot(cData) + gcoast + geom_point(aes(x=lon, y=lat, colour=distanceFromShore), size=1, alpha=0.3, na.rm=T) + coord_map() + ggtitle(x$name))
-  
+
     # store data file
     dir.create(str_c("transects/", x$name), showWarnings=FALSE, recursive=TRUE)
     dataName <- deparse(substitute(data))
-    write.csv(cData, file=str_c("transects/", x$name, "/", dataName, ".csv"), row.names=FALSE)    
+    write.csv(cData, file=str_c("transects/", x$name, "/", dataName, ".csv"), row.names=FALSE)
   }
-	
+
 	return(invisible(NULL))
 }, data=ts)
 dev.off()

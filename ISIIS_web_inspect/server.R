@@ -1,5 +1,5 @@
 #
-#      
+#
 #
 #  (c) Copyright 2013 Jean-Olivier Irisson
 #      GNU General Public License v3
@@ -27,16 +27,16 @@ shinyServer(function(input, output) {
     })
     names(d)[1] <- "transect"
     d$transect <- input$transect[d$transect]
-    
+
     dm <- melt(d, id.vars=c("transect", "Depth.m.", input$dist, "down.up"), measure.vars=input$vars)
-    
+
     # interpolate every variable
     di <- ddply(dm, ~transect+variable, function(x) {
       x <- na.omit(x[which(x$down.up=="up"),])
       xi <- interp.dist(x=x[,input$dist], y=x$Depth.m., z=x$value, duplicate="mean", x.step=input$xstep, y.step=input$ystep)
     })
     di <- rename(di, c("x"=input$dist, "y"="Depth.m."))
-    
+
     # return raw and interpolated data
     list(dm=dm, di=di)
   })
@@ -53,7 +53,7 @@ shinyServer(function(input, output) {
 
     if ( nrow(d$dm)==0 | length(input$vars)==0 | all(is.na(d$dm$value)) ) {
       stop("No data, try again")
-      
+
     } else {
       plots <- dlply(d$di, ~variable, function(x) {
         ggplot(x, aes_string(x=input$dist, y="-Depth.m.")) +
