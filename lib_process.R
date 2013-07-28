@@ -1,3 +1,12 @@
+#
+#      Functions to process raw data
+#
+#  (c) Copyright 2013 Jean-Olivier Irisson
+#      GNU General Public License v3
+#
+#--------------------------------------------------------------------------
+
+# Read thermosalinometer from Tethys
 read.ts <- function(file) {
   # get column names from "notice_daufin-TS.pdf" page 12
   colNames <- c(
@@ -28,7 +37,7 @@ read.ts <- function(file) {
     d$lon <- approx(x=d$dateTime, y=d$lon, xo=d$dateTime)$y
   }
   
-  # select data columns
+  # select interesting data columns
   d <- d[,c("dateTime", "lat", "lon", "atmPressure", "tempAir", "humidity", "windDirection", "windSpeed", "depth", "temperature", "salinity", "fluorometry")]
 	
 	return(d)
