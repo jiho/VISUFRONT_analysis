@@ -74,9 +74,9 @@ coast <- read.csv("map/gshhg_coteazur_f.csv")
 gcoast <- geom_polygon(aes(x=lon, y=lat), data=coast)
 
 # # get ship data corresponding to the drifters trajectories
-# startTime <- min(d$dateTime)
-# stopTime <- max(d$dateTime)
-# s <- s[s$dateTime >= startTime & s$dateTime <= stopTime,]
+startTime <- min(d$dateTime)
+stopTime <- max(d$dateTime[d$unit=="C1 - 20"])
+s <- s[s$dateTime >= startTime & s$dateTime <= stopTime,]
 
 pdf("drifters.pdf", width=10, height=7)
 print(
