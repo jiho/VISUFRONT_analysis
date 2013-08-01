@@ -32,8 +32,8 @@ shinyUI(pageWithSidebar(
         class="span6",
         checkboxGroupInput(inputId="vars",
                            label="Variables",
-                           choices=c("Temp.C.", "Salinity.PPT.", "Density", "Fluoro.volts.", "Oxygen.ml.l.", "Irrandiance.UE.cm."),
-                           selected="Salinity.PPT."
+                           choices=c("Temp.C", "Salinity.PPT", "Density", "Fluoro.volts", "Oxygen.ml.l", "Irrandiance.UE.cm"),
+                           selected="Salinity.PPT"
                            )
       )
     ),

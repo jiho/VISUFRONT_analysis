@@ -28,14 +28,14 @@ shinyServer(function(input, output) {
     names(d)[1] <- "transect"
     d$transect <- input$transect[d$transect]
 
-    dm <- melt(d, id.vars=c("transect", "Depth.m.", input$dist, "down.up"), measure.vars=input$vars)
+    dm <- melt(d, id.vars=c("transect", "Depth.m", input$dist, "down.up"), measure.vars=input$vars)
 
     # interpolate every variable
     di <- ddply(dm, ~transect+variable, function(x) {
       x <- na.omit(x[which(x$down.up=="up"),])
-      xi <- interp.dist(x=x[,input$dist], y=x$Depth.m., z=x$value, duplicate="mean", x.step=input$xstep, y.step=input$ystep)
+      xi <- interp.dist(x=x[,input$dist], y=x$Depth.m, z=x$value, duplicate="mean", x.step=input$xstep, y.step=input$ystep)
     })
-    di <- rename(di, c("x"=input$dist, "y"="Depth.m."))
+    di <- rename(di, c("x"=input$dist, "y"="Depth.m"))
 
     # return raw and interpolated data
     list(dm=dm, di=di)
@@ -56,7 +56,7 @@ shinyServer(function(input, output) {
 
     } else {
       plots <- dlply(d$di, ~variable, function(x) {
-        ggplot(x, aes_string(x=input$dist, y="-Depth.m.")) +
+        ggplot(x, aes_string(x=input$dist, y="-Depth.m")) +
           # geom_point(aes(fill=value), shape=21, colour=NA, na.rm=T) +
           geom_tile(aes(fill=value), na.rm=T) +
           geom_contour(aes(z=value), colour="white", alpha=0.9, bins=5, na.rm=T) +
