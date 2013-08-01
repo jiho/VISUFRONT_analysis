@@ -84,14 +84,15 @@ ggplot(d, aes(x=lon, y=lat)) +
   coord_map() +
   gcoast +
   # ship track
-  geom_path(size=0.1, na.rm=T, data=s, alpha=0.8) +
+  geom_path(size=0.5, na.rm=T, data=s, alpha=0.8) +
   # drifters track
-  geom_path(aes(colour=unit), size=0.1, na.rm=T, alpha=1) +
-  geom_point(aes(colour=unit), size=0.3, na.rm=T, alpha=1) +
-  geom_text(aes(colour=unit, label=timeLabel), size=0.5, hjust=1.1, vjust=-0.3, na.rm=T) +
+  geom_path(aes(colour=unit), size=0.5, na.rm=T, alpha=1) +
+  geom_point(aes(colour=unit), size=1, na.rm=T, alpha=1) +
+  # geom_text(aes(colour=unit, label=timeLabel), size=0.5, hjust=1.1, vjust=-0.3, na.rm=T) +
 	# interpolated position
-  geom_point(aes(colour=unit), size=0.5, na.rm=T, alpha=1, data=di) +
-  scale_x_continuous(expand=c(0.01,0.01))
+  geom_point(aes(colour=unit), size=1.5, na.rm=T, alpha=1, data=di)
+  # scale_x_continuous(expand=c(0,0)) +
+  # scale_y_continuous(expand=c(0,0))
 )
 dev.off()
 
