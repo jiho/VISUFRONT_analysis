@@ -20,8 +20,8 @@ b <- read.xls("drifters/boa.xls", na.strings="", stringsAsFactors=FALSE)
 f <- read.xls("drifters/float.xls", na.strings="", stringsAsFactors=FALSE)
 
 # read ship trajectory from ts
-s1 <- read.ts(str_c("/Volumes/donnees/20130727.tethys"))
-s2 <- read.ts(str_c("/Volumes/donnees/20130728.tethys"))
+s1 <- read.ts("TS/20130727.tethys")
+s2 <- read.ts("TS/20130728.tethys")
 s <- rbind(s1,s2)
 
 # compute lat and lon for boa
