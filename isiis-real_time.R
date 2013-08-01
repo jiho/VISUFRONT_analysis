@@ -18,11 +18,12 @@ source("lib_plot.R")
 
 real.time.plot <- function(vars=c("Temp.C", "Salinity.PPT", "Fluoro.volts", "Oxygen.ml.l", "Irrandiance.UE.cm")) {
 	# get data
-	hydroFiles <- list.files("/Volumes/ISIIShydro", pattern=glob2rx("ISIIS20130728*.txt"), full=T)
+	hydroFiles <- list.files("/Volumes/ISIIShydro", pattern=glob2rx("ISIIS20130729*.txt"), full=T)
 	d <- read.isiis(hydroFiles[length(hydroFiles)])
 
-	tsFile <- "/Volumes/donnees/20130728.tethys"
-	t <- read.ts(tsFile)
+	t1 <- read.ts("/Volumes/donnees/20130729.tethys")
+	t2 <- read.ts("/Volumes/donnees/20130729.tethys")
+  t <- rbind(t1, t2)
 
 	# get position data
 	d$dateTime <- round(d$dateTimeMsec)
@@ -32,7 +33,7 @@ real.time.plot <- function(vars=c("Temp.C", "Salinity.PPT", "Fluoro.volts", "Oxy
 	d$lon <- approx(x=as.numeric(d$dateTime), y=d$lon, xo=as.numeric(d$dateTime))$y
 
 	# compute distance from a reference point
-	d$distanceFromVlfr <- dist.from.villefranche(d$lat, d$lon)
+	d$distanceFromVlfr <- dist.from.start(d$lat, d$lon)
 
 	# detect yos
 	casts <- detect.casts(d$Depth.m)
@@ -63,6 +64,6 @@ real.time.plot <- function(vars=c("Temp.C", "Salinity.PPT", "Fluoro.volts", "Oxy
 }
 
 while ( 1 == 1 ) {
-	real.time.plot(c("Salinity.PPT", "Fluoro.volts"))
-	Sys.sleep(60)
+	real.time.plot(c("Temp.C", "Salinity.PPT", "Fluoro.volts", "Oxygen.ml.l"))
+	Sys.sleep(180)
 }
