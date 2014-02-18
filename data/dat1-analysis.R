@@ -141,22 +141,25 @@ y.step=1
 i <- interp(x=x, y=y, z=z, xo=seq(0, max(x), by=x.step), yo=seq(0, max(y), by=y.step), duplicate="mean", linear=T)
 
 
-# Easy way but that doesn't really work
-#set <- setup.image.smooth(nrow = 200, ncol=150, dx = 0.1, dy = 1)
-#is <- image.smooth(i,  wght=set, xwidth = 0, ywidth = 0)
-#image.plot(is)
+# Second interpolation for all variables
+di2 <- ddply(di, ~variable, function(x) {
+    x <- na.omit(x)
+    xi <- interp.smooth(x=x$distance, y=x$Depth.m, z=x$value, x.step = 0.05, y.step = 0.05)
+})
 
-# extract dataframe from the interpolation
-out <- melt(i$z, varnames=c("x","y"))
-out$x <- i$x[out$x]
-out$y <- i$y[out$y]
 
-di2 <- out
 di2 <- rename(di2, c("x"="distance", "y"="Depth.m"))
 
+plots <- dlply(di2, ~variable, function(x) {
+        ggplot(x, aes(x=distance, y=-Depth.m)) +
+        #geom_point(aes(fill=value), shape=21, colour=NA, na.rm=T) +
+        geom_tile(aes(fill=value), na.rm=T) +
+        stat_contour(aes(z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
+        scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+        scale_x_continuous(expand=c(0,0)) +
+        scale_y_continuous(expand=c(0,0))
+        })
 
-# plot the new smoothed interpolation
-ggplot(di2, aes(x=distance, y=-Depth.m)) +
 geom_tile(aes(fill=value), na.rm=T) +
 stat_contour(aes(z=value), colour="white", alpha=0.7, bins=6, size=0.2, na.rm=TRUE) +
 scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
