@@ -132,12 +132,12 @@ x <- i2$distance
 y <- i2$Depth.m
 z <- i2$value
 
+
+# interpolation with ONLY ONE VARIABLE
 # set new step
-x.step=0.05
-y.step=0.05
+x.step=1
+y.step=1
 
-
-# interpolate
 i <- interp(x=x, y=y, z=z, xo=seq(0, max(x), by=x.step), yo=seq(0, max(y), by=y.step), duplicate="mean", linear=T)
 
 
