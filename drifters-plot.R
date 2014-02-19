@@ -35,6 +35,9 @@ b$lon <- 7 + b$lon/60
 # combine all data
 d <- rbind(d,b,f)
 
+# keep the float data only
+d <- d[d$unit == "provbio", ]
+
 # sort by date and time
 d$dateTime <- as.POSIXct(str_c(d$date, d$time, sep=" ")) + 2 * 3600
 d <- arrange(d, dateTime, unit)
