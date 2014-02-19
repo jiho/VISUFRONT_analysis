@@ -45,6 +45,8 @@ read.ts <- function(file) {
 
 # Read hydrological data from ISIIS
 read.isiis <- function(file) {
+  library("stringr")
+
 	options(digits.secs=2)  # allow split seconds
 
 	# read the data
