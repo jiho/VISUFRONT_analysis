@@ -132,14 +132,19 @@ sort(unique(pids$groups))
 
 
 
+#--------------------------------------------
+#       EXTRACT BIOLOGICAL INFO
+#--------------------------------------------
 
 
 # set depth BIN 
-binsize <- 0.5
+binsize <- 1
 pids$DepthBin <- round_any(pids$Depth, binsize)
 
 # get raw abundance
-bio <- ddply(pids, ~Valid+Label+DepthBin, function(x) {sum(na.omit(x$Valid==paste(x$Valid)))})
+bio <- ddply(pids, ~Valid+Label+DepthBin, function(x) {
+    sum(na.omit(x$Valid==paste(x$Valid)))
+    })
 bio <- rename(bio, c("V1" = "Abund"))
 
 # check for NAs
@@ -147,6 +152,21 @@ bio[which(is.na(bio$Valid)), ]
 
 if (dim(bio[which(is.na(bio)), ])[1] > 0) {
     bio <- bio[-which(is.na(bio)), ]
+}
+
+
+
+
+# BIO GROUPS
+# get raw abundance
+bioG <- ddply(pids, ~groups+Label+DepthBin, function(x) {
+    sum(na.omit(x$groups==paste(x$groups)))
+    })
+bioG <- rename(bioG, c("V1" = "Abund"))
+
+# check for NAs
+if (dim(bioG[which(is.na(bioG)), ])[1] > 0) {
+    bioG <- bioG[-which(is.na(bioG)), ]
 }
 
 
@@ -219,6 +239,7 @@ vol <- adply(datfiles, 1, function(x) {
     vol <- vol[, -1]
     
 head(vol)
+length(which(is.na(vol)))  # if 0 --> OK
 
 
 
@@ -231,6 +252,16 @@ head(vol)
 bioFull <- join(bioFull, vol)
 bioFull$abund.m3 <- bioFull$Abund / bioFull$vol.m3
 
+
+# NAs
+length(which(is.na(bioFull)))  # if 0 --> OK
+bioFull[which(str_detect(rownames(bioFull), "NA")), ]
+bioFull[which(is.na(bioFull)), ]
+
+
+if (dim(bioFull[which(is.na(bioFull)), ])[1] > 0) {
+    bioFull <- bioFull[-which(is.na(bioFull$nb.img)), ]   # Only some column work, weird. It seems to be from the vol object after joining
+}
 
 
 #---------------------------------------------------------
