@@ -636,13 +636,31 @@ scale_size(expression(paste("larval fish.m"^"-3")), limits = c(1, max(biophy$fis
 scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
 scale_y_continuous("Depth (m)", limits= c(-103, 4), expand = c(0, 0))
 
+# select variables
+colnames(biophy)
+biophyplot <- biophy[, c(1, 2, 4, 6:11, 13:16, 18:20, 23, 25:32, 47, 49)]
+
+taxa1 <- c("appendicularians", "chaetognaths", "copepods", "ctenophores", "doliolids", "ephyrae", "jellyfish", "pteropods")
+taxa2 <- c("radiolarians_sol", "radiolarian_col_rings", "radiolarians_dark", "radiolarian_colony")
+
+b <- biophyplot[ , names(biophyplot) %in% c(taxa2, "DepthBin", "cast", "distanceFromVlfr")]
+b <- melt(b, id.vars = c("DepthBin", "cast", "distanceFromVlfr"))
+
+plots <- dlply(b, ~variable, function(x) {
+        ggplot() +
+        geom_raster(data=out, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+        stat_contour(data=out, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
+        geom_point(data=x, aes(x=distanceFromVlfr, y=-DepthBin, size=value, group=cast))+
         scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
-        scale_x_continuous(expand=c(0,0)) +
-        scale_y_continuous(expand=c(0,0))
+        #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+        scale_size(bquote(.(paste(x$variable))), limits = c(1, max(x$value)), range = c(1, 12))+
+        scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
+        scale_y_continuous("Depth (m)", limits= c(-103, 4), expand=c(0,0))
         })
 
 do.call(grid.arrange, c(plots,list(ncol=1)))
 
+do.call(grid.arrange, c(plots,list(ncol=2, nrow=4)))
 
 
 
