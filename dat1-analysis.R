@@ -12,7 +12,6 @@
 # A .Rprofile file should be set personnaly to the directory where the data are stored (dropbox)
 
 # For now locate data from the dropbox repo manually
-dir <- "/Users/faillettaz/Dropbox/robin/visufront-data"
 dir <- "/Users/faillettaz/Dropbox/visufront-data/"
 
 # set options for ploting
@@ -30,12 +29,10 @@ library("akima")
 library("fields")
 
 
-source("data/lib_zooprocess.R")
 source("lib_zooprocess.R")
 source("data/lib_plot.R")
 
 
-files <- list.files(dir, full = T)
 files <- list.files(str_c(dir, "zooprocess/"), full = T)
 #pid <- read.pid(files[2])
 
@@ -273,7 +270,6 @@ if (dim(bioFull[which(is.na(bioFull)), ])[1] > 0) {
 #---------------------------------------------------------
 
 # Read physical data from transect 4
-phy <- read.csv("transects/cross_current_4/isiis.csv", header=T, sep=",")
 phy <- read.csv(str_c(dir, "/isiis.csv"), header=T, sep=",")
 head(phy)
 # delete first line (data from previous transect)
@@ -356,7 +352,7 @@ plots <- dlply(di, ~variable, function(x) {
 
 # compute interpolation 
 # interpolate all variables
-dm <- melt(d, id.vars=c("Depth.m", "distanceFromVlfr"), measure.vars=c("Salinity.PPT"))#, "Temp.C", "Fluoro.volts", "Oxygen.ml.l"))
+dm <- melt(d, id.vars=c("Depth.m", "distanceFromVlfr"), measure.vars=c("Salinity.PPT", "Temp.C", "Fluoro.volts", "Oxygen.ml.l"))
 
 
 
@@ -417,27 +413,6 @@ do.call(grid.arrange, c(plots,list(ncol=1)))
 
 
 
-# overplot ISIIS trajectory over physical data
-# Get physical data before interpolation
-updw <- phy
-
-# select the processed casts
-processed <- c(1, 5, 9, 17, 25, 33, 49)
-updw <- updw[which(updw$cast %in% processed), ]
-
-# select a single variable to go faster
-sal <- di2[which(di2$variable == "Salinity.PPT"), ]
-
-ggplot() +
-geom_raster(aes(x=distance, y=-Depth.m, fill=value), data= sal, na.rm=T, ) +
-stat_contour(aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE, data=sal) +
-geom_path(aes(x=distanceFromVlfr, y=-Depth.m, group=cast), size=0.6, data=updw) +
-scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
-scale_x_continuous(expand=c(0,0)) +
-scale_y_continuous(expand=c(0,0))
-
-
-
 
 #--------------------------------------------------
 #           Merge physical and biological
@@ -450,6 +425,7 @@ scale_y_continuous(expand=c(0,0))
 
 
 head(bioFull)
+which(is.na(bioFull))
 
 
 # NB : Bio data need to be localised in x, y, z --> I will bin the depth by profile
@@ -610,9 +586,6 @@ iS <- ldply(i, function(x) {
 head(iS)
 unique(iS$variable)
 
-#iS$variable <- as.character(iS$variable)
-iS[which(iS$variable == "Temperature.C"), "variable"] <- "Temp.celsius"
-
 
 # plot it 
 plots <- dlply(iS, ~variable, function(x) {
@@ -631,14 +604,8 @@ do.call(grid.arrange, c(plots,list(ncol=1)))
 
 
 
-ggplot()+
-geom_raster(data=out, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-stat_contour(data=out, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-geom_point(data=biophy, aes(x=distanceFromVlfr, y=-DepthBin, size= fish, group=cast))+
-scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
-scale_size(expression(paste("larval fish.m"^"-3")), limits = c(1, max(biophy$fish)), range = c(1, 15))+
-scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
-scale_y_continuous("Depth (m)", limits= c(-103, 4), expand = c(0, 0))
+
+# PLOT SEVERAL AT ONCE
 
 # select variables
 colnames(biophy)
@@ -668,16 +635,17 @@ do.call(grid.arrange, c(plots,list(ncol=2, nrow=4)))
 
 
 
+
+#---------------------------------------------
+#          Get physical data for BRT
+#---------------------------------------------
+
+
 biophy$sal <- interp.surface(smooth, xy)
 
 biophy[, c("sal", 'Salinity.PPT', 'Depth.m')]
 
-#---------------------------------------------
-#                   TODO
-#---------------------------------------------
 
-Compute total larval abundance per station to compare with plankton nets
-interp.surface(xy, xyz)
 
 
 
@@ -713,6 +681,11 @@ scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
 scale_y_reverse("Depth (m)", expand=c(0,0)) +
 scale_linetype_manual("", values=c(1, 3)) + 
 opts
+
+
+
+
+
 
 
 # read coastline to plot the trajectories and check
@@ -782,14 +755,24 @@ g <- rename(g, c('ilon'='lon', 'ilat'='lat'))
 
 s24_25 <- s[which(s$dateTime > as.POSIXct("2013-07-24 15:00:00") & s$dateTime < as.POSIXct("2013-07-25 05:00:00")), ]
 
-    ggplot(mapping=aes(x=lon, y=lat)) + 
-    	#geom_raster(aes(fill=-z, x=x, y=y), data=bathyDF) + 
-    	geom_contour(aes(z=-z, x=x, y=y), colour="gray70", data=bathyDF) + 
-    	geom_polygon(fill="gray25", data=coast, aes(x=lon, y=lat)) +
-    	geom_path(size=0.4, na.rm=T, data=s24_25) + # ship track 
-        geom_point(size=2, data=g)+
-    	scale_x_continuous("Longitude", expand=c(0,0)) + 
-    	scale_y_continuous("Latitude", expand=c(0,0)) +
-    	coord_quickmap(xlim=c(6.8, 8.1), ylim=c(43.2, 43.75)) +
-    	theme_bw()
+ggplot(mapping=aes(x=lon, y=lat)) +
+	#geom_raster(aes(fill=-z, x=x, y=y), data=bathyDF) +
+	geom_contour(aes(z=-z, x=x, y=y), colour="gray70", data=bathyDF) +
+	geom_polygon(fill="gray25", data=coast, aes(x=lon, y=lat)) +
+	geom_path(size=0.4, na.rm=T, data=s24_25) + # ship track
+    geom_point(size=2, data=g)+
+	scale_x_continuous("Longitude", expand=c(0,0)) +
+	scale_y_continuous("Latitude", expand=c(0,0)) +
+	coord_quickmap(xlim=c(6.8, 8.1), ylim=c(43.2, 43.75)) +
+	theme_bw()
 
+
+
+
+
+#---------------------------------------------
+#                   TODO
+#---------------------------------------------
+
+Compute total larval abundance per station to compare with plankton nets
+interp.surface(xy, xyz)
