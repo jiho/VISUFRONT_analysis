@@ -278,6 +278,8 @@ phy <- phy[-1, ]
 # select only data from upcasts --> Keep first down cast below 25m to improve interpolation
 d <- phy[which(phy$down.up %in% "up" | phy$down.up %in% "down" & phy$Depth.m > 28), ]
 
+# Change names to same number of character for each (for plots)
+d <- rename(d, c("Temp.C" = "Temp.celsius"))
 
 # check if seems ok
 ggplot(d, aes(x=distanceFromVlfr, y=-Depth.m, colour=Salinity.PPT))  + geom_point() # Yes !
