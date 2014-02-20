@@ -15,6 +15,10 @@
 dir <- "/Users/faillettaz/Dropbox/robin/visufront-data"
 dir <- "/Users/faillettaz/Dropbox/visufront-data/"
 
+# set options for ploting
+opts <- theme(axis.title.y= element_text(angle=90, vjust=0.5, size=15), axis.title.x= element_text(angle=0, vjust=0.5, size=15)) + 
+theme(axis.text.x  = element_text(angle=0, vjust=0.5, size=13), axis.text.y  = element_text(angle=0, vjust=0.5, size=13))
+
 
 library("plyr")
 library("ggplot2")
