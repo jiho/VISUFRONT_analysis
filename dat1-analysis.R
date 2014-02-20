@@ -13,6 +13,7 @@
 
 # For now locate data from the dropbox repo manually
 dir <- "/Users/faillettaz/Dropbox/robin/visufront-data"
+dir <- "/Users/faillettaz/Dropbox/visufront-data/"
 
 
 library("plyr")
@@ -26,10 +27,12 @@ library("fields")
 
 
 source("data/lib_zooprocess.R")
+source("lib_zooprocess.R")
 source("data/lib_plot.R")
 
 
 files <- list.files(dir, full = T)
+files <- list.files(str_c(dir, "zooprocess/"), full = T)
 #pid <- read.pid(files[2])
 
 dat1 <- files[which(str_detect(files, "_dat1.txt") == T)]
@@ -236,6 +239,7 @@ bioFull$abund.m3 <- bioFull$Abund / bioFull$vol.m3
 
 # Read physical data from transect 4
 phy <- read.csv("transects/cross_current_4/isiis.csv", header=T, sep=",")
+phy <- read.csv(str_c(dir, "/isiis.csv"), header=T, sep=",")
 head(phy)
 # delete first line (data from previous transect)
 phy <- phy[-1, ]
@@ -551,9 +555,11 @@ interp.surface(xy, xyz)
 # read coastline to plot the trajectories and check
 coast <- read.csv("map/cote_azur.csv")
 load("map/coast_bathy.RData")
+load(str_c(dir, "/map/coast_bathy.RData"))
 
 # read stations position
 station <- read.csv("Plankton-nets/station-regent-visufront.csv", header=T, sep=";")
+station <- read.csv(str_c(dir, "/nets/station-regent-visufront.csv"), header=T, sep=";")
 head(station)
 
 # compute lat and lon for stations
@@ -580,9 +586,13 @@ print(p)
 # plot boat traj + stations (from drifter-plot.R)
 # read ship trajectory from ts
 filenames <- list.files("TS/")
+filenames <- list.files(str_c(dir, "/TS/"))
+
+source("lib_process.R")
 
 s <- adply(filenames, 1, function(x) {
 	s <- read.ts(str_c("TS/",x))
+	s <- read.ts(str_c(dir, "/TS/",x))
 	return(s)
 	})
 
