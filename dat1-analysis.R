@@ -454,60 +454,106 @@ head(bioFull)
 # select only physical data from the profil 05 (cast 9)
 biophy <- ddply(bioFull, ~cast, function(x) {
     
-    phyx <- phy[which(phy$cast == paste(x$cast)), ]
+#    x <- bioFull[which(bioFull$cast == 49), ]
+    
+    phyx <- phy[which(phy$cast == unique(x$cast)), ]
+    
+    # Get biological data
+    biox <- bioFull[which(bioFull$cast == unique(x$cast)), ]
+
+    # cast the df
+    dC <- dcast(biox, DepthBin ~ Valid, value.var = "abund.m3")
+    length(which(is.na(dC)))
+    
+    
+    print(unique(phyx$cast))
+   
     # Bin depth = select middle of each meter
     # set depth BIN 
     bin <- seq(from=1, to = ceiling(max(phyx$Depth.m)), by=binsize)
     
-    # get index of the min of each point --> NEED TO BE DONE BY PROFILE
+    # get index of the min of each point
     min <- adply(bin, 1, function(m){
         which.min(abs(phyx$Depth.m-m))
         })
-
-    # Merge biology and physics
-    biox <- bioFull[which(bioFull$cast == paste(x$cast)), ]
-
-
-    # PROBLEMS WITH DCAST BUT ELSE IT'S SEEMS TO WORK
-
-    dC <- dcast(biox, DepthBin ~ Valid, value.var = "abund.m3")
-    length(which(is.na(dC)))
-
+        
+    which(duplicated(min$V1))
+    
     # select only the physical data corresponding to the center of each bin
     phyxMin <- phyx[min$V1, ]
-    phyxMin$DepthBin <- round_any(phyxMin$Depth.m, binsize)
-
-    if (phyxMin$DepthBin[length(phyxMin$DepthBin)] == 102) {
-        phyxMin$DepthBin[length(phyxMin$DepthBin)] <- 103
-    }
-
-    dim(phyxMin)
-    dim(dC)
-
+    
+    
+    # IF DUPLICATEDS, it generates NAs at the end that are hard to get rid of
+    if (length(which(duplicated(phyxMin))) > 0 ) {
+        
+        # for factor variables
+        phyxMin[which(duplicated(phyxMin)), names(phyxMin) %in% c("dateTime", "down.up", "dateTimeMsec")] <- phyxMin[which(duplicated(phyxMin))-1, names(phyxMin) %in% c("dateTime", "down.up", "dateTimeMsec")]
+        
+        # for numerical variable, do the mean of the previous and next
+        phyxMin[which(duplicated(phyxMin)), !names(phyxMin) %in% c("dateTime", "down.up", "dateTimeMsec")] <- 
+        (phyxMin[which(duplicated(phyxMin))-1, !names(phyxMin) %in% c("dateTime", "down.up", "dateTimeMsec")] +  phyxMin[which(duplicated(phyxMin))+1, !names(phyxMin) %in% c("dateTime", "down.up", "dateTimeMsec")]) / 2
+        
+     }
+     
+     # net very good but force bin
+     phyxMin$DepthBin <- bin 
+     
+     
+#     # Shoud be done this way
+#     phyxMin$DepthBin <-  round_any(phyxMin$Depth.m, binsize)
+#
+#     if (phyxMin$DepthBin[length(phyxMin$DepthBin)] == 102) {
+#        phyxMin$DepthBin[length(phyxMin$DepthBin)] <- 103
+#    }
+    
+    #dim(phyxMin)
+    #dim(dC)
+    
+    #head(phyxMin)
+    #head(dC)
+    
+    
+    
     # join the 2
     biophyx <- join(dC, phyxMin)
-    
+
+
+    #biophyx[which(is.na(biophyx)), ]
     return(biophyx)
     
 }, .progress="text")
 
-# NB :Warnings problably because some profiles don't go as deep as or deeper that 103m
+# NB : If warnings it's because x$cast needs to be unique (solved)
+# Some problem with some bin that doesn't exist in the physical data
+# These data should be interpolated later on
 
 head(biophy)
 dim(biophy)
-length(unique(biophy$cast))
+unique(biophy$cast)
 table(biophy$DepthBin)
+table(biophy$cast)
 
+dim(biophy[which(is.na(biophy)), ])
+
+
+# remove NAs
+if (dim(biophy[which(is.na(biophy)), ])[1] > 0) {
+    biophy <- which(is.na(biophy[-which(is.na(biophy$Depth)), ]))   # other columns are <NA> so not recognized as NAs
+}
+head(biophy)
+
+sal <- di2[which(di2$variable == "Salinity.PPT"), ]
 
 ggplot() + 
-geom_raster(aes(x=distance, y=-Depth.m, fill=value), data= sal, na.rm=T, ) +
+geom_raster(aes(x=distance, y=-Depth.m, fill=value), data= sal , na.rm=T, ) +
 stat_contour(aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE, data=sal) +
 #geom_path(aes(x=distanceFromVlfr, y=-Depth.m, group=cast), size=0.6, data=phy) +
-geom_point(data=biophy[-which(biophy$fish==0), ], aes(x=distanceFromVlfr, y=-DepthBin, size=fish), group=cast)+
+geom_point(data=biophy[-which(biophy$fish==0), ], aes(x=distanceFromVlfr, y=-DepthBin, size=fish, group=cast))+
 scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
 scale_x_continuous(expand=c(0,0)) +
 scale_y_continuous(expand=c(0,0))
 
+# IT WORKS, GREAT. 
 
 
 
