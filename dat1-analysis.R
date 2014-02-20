@@ -31,6 +31,7 @@ library("fields")
 
 source("lib_zooprocess.R")
 source("data/lib_plot.R")
+source("lib_process.R")
 
 
 files <- list.files(str_c(dir, "zooprocess/"), full = T)
@@ -275,11 +276,12 @@ head(phy)
 # delete first line (data from previous transect)
 phy <- phy[-1, ]
 
+# Change names to same number of character for each (for plots)
+phy <- rename(phy, c("Temp.C" = "Temp.celsius"))
+
 # select only data from upcasts --> Keep first down cast below 25m to improve interpolation
 d <- phy[which(phy$down.up %in% "up" | phy$down.up %in% "down" & phy$Depth.m > 28), ]
 
-# Change names to same number of character for each (for plots)
-d <- rename(d, c("Temp.C" = "Temp.celsius"))
 
 # check if seems ok
 ggplot(d, aes(x=distanceFromVlfr, y=-Depth.m, colour=Salinity.PPT))  + geom_point() # Yes !
@@ -352,7 +354,7 @@ plots <- dlply(di, ~variable, function(x) {
 
 # compute interpolation 
 # interpolate all variables
-dm <- melt(d, id.vars=c("Depth.m", "distanceFromVlfr"), measure.vars=c("Salinity.PPT", "Temp.C", "Fluoro.volts", "Oxygen.ml.l"))
+dm <- melt(d, id.vars=c("Depth.m", "distanceFromVlfr"), measure.vars=c("Salinity.PPT", "Temp.celsius", "Fluoro.volts", "Oxygen.ml.l"))
 
 
 
@@ -603,9 +605,10 @@ do.call(grid.arrange, c(plots,list(ncol=1)))
 
 
 
+#------------------------------------------------------
+#                PLOT TAXA ABUNDANCES
+#------------------------------------------------------
 
-
-# PLOT SEVERAL AT ONCE
 
 # select variables
 colnames(biophy)
@@ -721,7 +724,7 @@ print(p)
 # read ship trajectory from ts
 filenames <- list.files(str_c(dir, "/TS/"))
 
-source("lib_process.R")
+
 
 s <- adply(filenames, 1, function(x) {
 	s <- read.ts(str_c(dir, "/TS/",x))
