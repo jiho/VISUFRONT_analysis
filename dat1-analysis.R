@@ -561,41 +561,81 @@ scale_y_continuous(expand=c(0,0))
 #         Get physical data from distribution 
 #------------------------------------------------------
 
+# Here, we use image.smooth that does the extrapolation on the left of the plot and make it nicer
+
 head(biophy)
 xy <- biophy[, c("distanceFromVlfr", "Depth.m")]
 
-# interpolate
-i <- interp(x=x, y=y, z=z, xo=seq(0, max(x), by=0.1), yo=seq(0, max(y), by=0.1),  linear = T, duplicate = "mean", extrap=F)
+# Select variables
 
 
+# interpolate like above for each variable
+i <- dlply(di, ~variable, function(x) {
+    # get rid of NAs
+    x <- na.omit(x)
+    
+    # select x y and z
+    x1 <- x$distance
+    y1 <- x$Depth.m
+    z1 <- x$value
+    
+    # run linear interpolation
+    i <- interp(x=x1, y=y1, z=z1, xo=seq(0, max(x1), by=0.2), yo=seq(0, max(y1), by=0.2),  linear = T, duplicate = "mean", extrap=F)
+    
+    return(i)
+}, .progress="text")
+
+
+# Create the grid for the nex interpolation w/ extrapolation
 grid <- data.frame(x=seq(0, max(x), by=0.1), y=seq(0, max(y), length=length(seq(0, max(x), by=0.1))))
 
-smooth <- image.smooth(i, grid=grid, theta=0.28)
-out <- melt(smooth$z, varnames=c("x","y"))
-out$x <- smooth$x[out$x]
-out$y <- smooth$y[out$y]
+iS <- ldply(i, function(x) {
+    # run smoothing
+    smooth <- image.smooth(x, grid=grid, theta=0.22)
+    
+    # pass the list to df
+    out <- melt(smooth$z, varnames=c("x","y"))
+    out$x <- smooth$x[out$x]
+    out$y <- smooth$y[out$y]
+    out <- rename(out, c("x"="distance", "y"="Depth.m"))
+    
+    return(out)
+    
+}, .progress="text")
 
-out <- rename(out, c("x"="distance", "y"="Depth.m"))
+head(iS)
+unique(iS$variable)
+
+#iS$variable <- as.character(iS$variable)
+iS[which(iS$variable == "Temperature.C"), "variable"] <- "Temp.celsius"
 
 
-ggplot(out, aes(x=distance, y=-Depth.m))+
-#geom_point(aes(fill=value), shape=21, colour=NA, na.rm=T) +
-geom_raster(aes(fill=value, na.rm=T))+
-stat_contour(aes(z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-geom_point(data=biophy[-which(biophy$fish==0), ], aes(x=distanceFromVlfr, y=-DepthBin, size=fish), group=cast)+
-scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
-scale_size(expression(paste("Fish larvae.m"^"-3")))+
-scale_x_continuous("Distance from shore", expand=c(0,0)) +
-scale_y_continuous("Depth (m)", expand=c(0,0))
-
-
-
-
-plots <- dlply(di2, ~variable, function(x) {
-        ggplot(x, aes(x=distance, y=-Depth.m)) +
+# plot it 
+plots <- dlply(iS, ~variable, function(x) {
+        ggplot(x, aes(x=distance, y=Depth.m)) +
         #geom_point(aes(fill=value), shape=21, colour=NA, na.rm=T) +
         geom_raster(aes(fill=value, na.rm=T))+
         stat_contour(aes(z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
+        scale_fill_gradientn(paste(x$variable), colours=spectral(), na.value=NA) +
+        scale_x_continuous("Distance from shore", expand=c(0,0)) +
+        scale_y_reverse("Depth (m)", expand=c(0,0)) +
+        opts
+        })
+
+do.call(grid.arrange, c(plots,list(ncol=1)))
+
+
+
+
+ggplot()+
+geom_raster(data=out, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+stat_contour(data=out, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
+geom_point(data=biophy, aes(x=distanceFromVlfr, y=-DepthBin, size= fish, group=cast))+
+scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+scale_size(expression(paste("larval fish.m"^"-3")), limits = c(1, max(biophy$fish)), range = c(1, 15))+
+scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
+scale_y_continuous("Depth (m)", limits= c(-103, 4), expand = c(0, 0))
+
         scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
         scale_x_continuous(expand=c(0,0)) +
         scale_y_continuous(expand=c(0,0))
