@@ -93,7 +93,40 @@ unique(pids$Valid)
 
 # Merge EPHYRAE
 pids[which(pids$Valid %in% c("ephyrae_side")), "Valid"] <- "ephyrae"
-unique(pids$Valid)
+sort(unique(pids$Valid))
+
+
+# Merge polychaetes
+pids[which(pids$Valid %in% c("polychaets")), "Valid"] <- "polychaetes"
+sort(unique(pids$Valid))
+
+
+# Merge shrimps
+pids[which(pids$Valid %in% c("shrimp_large")), "Valid"] <- "shrimps"
+sort(unique(pids$Valid))
+
+# change radiolarians names
+pids[which(pids$Valid %in% c("radiolarians")), "Valid"] <- "radiolarian_sol"
+sort(unique(pids$Valid))
+pids[which(pids$Valid %in% c("radiolarian_col_rings")), "Valid"] <- "radiolarian_rings"
+sort(unique(pids$Valid))
+pids[which(pids$Valid %in% c("radiolarian_colony")), "Valid"] <- "radiolarian_col"
+sort(unique(pids$Valid))
+pids[which(pids$Valid %in% c("radiolarians_dark")), "Valid"] <- "radiolarian_dark"
+sort(unique(pids$Valid))
+
+
+
+# Merge groups
+pids$groups <- pids$Valid 
+# change radiolarians names
+pids[which(str_detect(pids$Valid, "radiolarian") == T), "groups"] <- "radiolarians"
+pids[which(str_detect(pids$Valid, "fish") == T), "groups"] <- "fish_like"
+pids[which(pids$Valid %in% c("crust_larvae", "crustaceans", "copepods")), "groups"] <- "small_crustaceans"
+
+sort(unique(pids$groups))
+
+
 
 
 
