@@ -386,18 +386,11 @@ do.call(grid.arrange, c(plots,list(ncol=1)))
 #source("data/lib_plot.R")
 
 # delete NAs from the previous interpolation
-i2 <- na.exclude(di)
-
-# Select variables
-x <- i2$distance
-y <- i2$Depth.m
-z <- i2$value
-
-
+i2 <- di
 
 
 # Second interpolation for all variables
-di2 <- ddply(di, ~variable, function(x) {
+di2 <- ddply(i2, ~variable, function(x) {
     x <- na.omit(x)
     xi <- interp.smooth(x=x$distance, y=x$Depth.m, z=x$value, x.step = 0.1, y.step = 0.1)
 }, .progress="text")
@@ -406,13 +399,14 @@ di2 <- ddply(di, ~variable, function(x) {
 di2 <- rename(di2, c("x"="distance", "y"="Depth.m"))
 
 plots <- dlply(di2, ~variable, function(x) {
-        ggplot(x, aes(x=distance, y=-Depth.m)) +
+        ggplot(x, aes(x=distance, y=Depth.m)) +
         #geom_point(aes(fill=value), shape=21, colour=NA, na.rm=T) +
-        geom_raster(aes(fill=value, na.rm=T)+
+        geom_raster(aes(fill=value, na.rm=T))+
         stat_contour(aes(z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-        scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
-        scale_x_continuous(expand=c(0,0)) +
-        scale_y_continuous(expand=c(0,0))
+        scale_fill_gradientn(paste(x$variable), colours=spectral(), na.value=NA) +
+        scale_x_continuous("Distance from shore", expand=c(0,0)) +
+        scale_y_reverse("Depth (m)", expand=c(0,0)) +
+        opts
         })
 
 do.call(grid.arrange, c(plots,list(ncol=1)))
