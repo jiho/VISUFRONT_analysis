@@ -687,13 +687,39 @@ interp.surface(xy, xyz)
 #           Plot ship trajectory 
 #---------------------------------------------
 
+
+
+# YO-YOs
+
+# overplot ISIIS trajectory over physical data
+# Get physical data before interpolation
+updw <- phy
+
+# select the processed casts
+processed <- c(1, 5, 9, 17, 25, 33, 49)
+updw[which(updw$cast %in% processed), "Done"] <- "Processed"
+updw[which(is.na(updw$Done)), "Done"] <-  "To be processed"
+
+
+# select a single variable to go faster
+sal <- out
+
+ggplot() +
+geom_raster(aes(x=distance, y=Depth.m, fill=value), data= sal, na.rm=T, ) +
+stat_contour(aes(x=distance, y=Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE, data=sal) +
+geom_line(aes(x=distanceFromVlfr, y=Depth.m, linetype=Done, group=cast), size=0.5, data=updw) +
+scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
+scale_y_reverse("Depth (m)", expand=c(0,0)) +
+scale_linetype_manual("", values=c(1, 3)) + 
+opts
+
+
 # read coastline to plot the trajectories and check
 coast <- read.csv("map/cote_azur.csv")
-load("map/coast_bathy.RData")
 load(str_c(dir, "/map/coast_bathy.RData"))
 
 # read stations position
-station <- read.csv("Plankton-nets/station-regent-visufront.csv", header=T, sep=";")
 station <- read.csv(str_c(dir, "/nets/station-regent-visufront.csv"), header=T, sep=";")
 head(station)
 
@@ -720,32 +746,30 @@ print(p)
 
 # plot boat traj + stations (from drifter-plot.R)
 # read ship trajectory from ts
-filenames <- list.files("TS/")
 filenames <- list.files(str_c(dir, "/TS/"))
 
 source("lib_process.R")
 
 s <- adply(filenames, 1, function(x) {
-	s <- read.ts(str_c("TS/",x))
 	s <- read.ts(str_c(dir, "/TS/",x))
 	return(s)
-	})
+	}, .progress="text")
 
 ggplot(mapping=aes(x=lon, y=lat)) + 
-	#geom_raster(aes(fill=-z, x=x, y=y), data=bathyDF) + 
-	geom_contour(aes(z=-z, x=x, y=y), colour="gray70", data=bathyDF) + 
+#	geom_raster(aes(fill=-z, x=x, y=y), data=bathyDF) + 
+	geom_contour(aes(z=-z, x=x, y=y), colour="gray80", data=bathyDF, size=0.3) + 
 	geom_polygon(fill="gray25", data=coast, aes(x=lon, y=lat)) +
-	geom_path(size=0.4, na.rm=T, data=s) + # ship track 
-	geom_point(aes(color=date), data=station, size=3) + 
-	geom_text(data=station, label=station$station_nb, vjust=2) + 
-	geom_point(aes(x=lon, y=lat), data=Boussole, color="blue") +
-	geom_text(aes(x=lon, y=lat, label="Boussole"), data=Boussole, color="blue", vjust=2, hjust=1, size=4) +
+	geom_point(data=station, size=4, colour= "gray40") + 
+	geom_path(size=0.35, na.rm=T, data=s, colour="gray20") + # ship track 
+#	geom_text(data=station, label=station$station_nb, vjust=2) + 
+#	geom_point(aes(x=lon, y=lat), data=Boussole, color="blue") +
+#	geom_text(aes(x=lon, y=lat, label="Boussole"), data=Boussole, color="blue", vjust=2, hjust=1, size=4) +
 	scale_x_continuous("Longitude", expand=c(0,0)) + 
 	scale_y_continuous("Latitude", expand=c(0,0)) +
-	#scale_fill_gradient(name="Depth") +
+#	scale_fill_gradient(name="Depth") +
 	scale_color_discrete("") + 
-	coord_quickmap(xlim=c(6.8, 8.1), ylim=c(43.2, 43.75)) +
-	theme_bw()
+	coord_quickmap(xlim=c(6.9, 8.05), ylim=c(43.24, 43.75)) +
+	theme_bw() + opts
 
 
     # Add glider data that to complete the profile
