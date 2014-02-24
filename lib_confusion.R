@@ -1,36 +1,108 @@
+#
+#      Functions to compute and investigate confusion in automatic
+#      classification
+#
+#  (c) Copyright 2014 Jean-Olivier Irisson
+#      GNU General Public License v3
+#
+#--------------------------------------------------------------------------
+
+
+confusion_matrix <- function(predicted, true) {
+  #
+  # Compute a confusion matrix (i.e. contingency table)
+  # pred    predicted category
+  # true    true category
+
+  t <- table(predicted=predicted, true=true)
+  return(t)
+}
+
 fortify.table <- function(x) {
+  #
+  # Convert a contingency table (i.e. confusion matrix) into a data.frame
+  #
+  # x   contingency table, returned by function table()
+
   return(as.data.frame(x))
 }
 
-autoplot.table <- function(x, trans=identity) {
+library("ggplot2")
+autoplot.table <- function(x, norm="none", trans=NULL) {
+  #
+  # Plot a contingency table (i.e. confusion matrix) as a heatmap
+  #
+  # x     contingency table, returned by function table()
+  # norm  normalisation method: none, by row ("rows") or by column ("columns")
+  # trans function used to transform the counts in the contingency table
+
+  # normalise data
+  norm <- match.arg(norm, c("none", "rows", "columns"))
+  variableName <- "Freq"
+  if ( norm == "rows") {
+    n <- rowSums(x)
+    x <- x / n
+    variableName <- "Freq\nby row"
+  }
+  if ( norm == "columns") {
+    n <- colSums(x)
+    x <- t(t(x) / n)
+    variableName <- "Freq\nby column"
+  }
+
   # make table into a data.frame
   x <- fortify.table(x)
-  
+
   # transform frequencies
-  x$Freq <- trans(x$Freq)
-  
+  if ( ! is.null(trans) ) {
+    if ( is.function(trans) ) {
+      x$Freq <- trans(x$Freq)
+      fun <- deparse(substitute(trans))
+      library("stringr")
+      variableName <- str_c(fun, "(", variableName, ")")
+    } else {
+      stop("Cannot find function ", fun)
+    }
+  }
+
   # make the plot
+  library("ggplot2")
   p <- ggplot(x) +
         geom_tile(aes_string(x=names(x)[2], y=names(x)[1], fill="Freq")) +
-        coord_fixed(1) + labs(fill="Freq") +
+        coord_fixed(1) + labs(fill=variableName) +
         theme(axis.text.x=element_text(angle=45, hjust=1)) +
         scale_x_discrete(expand=c(0,0)) + scale_y_discrete(expand=c(0,0))
   return(p)
 }
 
-confusion_stats <- function(cm, sort.by=NULL) {
+confusion_stats <- function(x, sort.by=NULL) {
   #
   # Confusion statistics (recall, precision, etc.)
   #
-  # cm    confusion matrix (table class with prediction as line and observations as columns)
+  # x    confusion matrix (table class with prediction as line and observations as columns)
 
-  (tp <- diag(cm))              # true positive
-  (fp <- rowSums(cm) - tp)      # false positive
-  (fn <- colSums(cm) - tp)      # false negative
-  (tn <- sum(cm) - tp - fp -fn) # true negative
+  # reduce to common categories
+  rowCats <- rownames(x)
+  colCats <- colnames(x)
+  if ( any( ! c(rowCats %in% colCats, colCats %in% rowCats) ) ) {
+    warning("Confusion statistics can only be computed for categories present in both lines and columns of the confusion matrix. Reducing data to common categories")
+    commonCats <- intersect(rowCats, colCats)
+    x <- x[rowCats %in% commonCats, colCats %in% commonCats]
+  }
+
+  # check if matrix is square
+  if ( nrow(x) != ncol(x)) {
+    stop("The confusion matrix needs to be square")
+  }
+
+  # compute base stats
+  (tp <- diag(x))              # true positive
+  (fp <- rowSums(x) - tp)      # false positive
+  (fn <- colSums(x) - tp)      # false negative
+  (tn <- sum(x) - tp - fp -fn) # true negative
 
   # store it
-  stats <- data.frame(tp, fp, fn, tn)
+  stats <- data.frame(tp, fp, fn)
 
   # define a formater for percentages
   format_percent <- function(x, precision=1) {
@@ -68,7 +140,7 @@ confusion_plot <- function(p, true, pred, x=c("probability", "order"), y=c("coun
   # x     nature of the x axis (Cf above)
   # y     nature of the y axis (Cf above)
   #
-  
+
   # check arguments
   p <- as.data.frame(p)
 
@@ -112,13 +184,42 @@ confusion_plot <- function(p, true, pred, x=c("probability", "order"), y=c("coun
     # compute the order of data from lowest to highest probability
     X$order <- seq(from=100, to=0, length.out=nrow(X))
 
-    return(X)      
+    return(X)
   })
 
   # TODO add counts per category in facet labels
-  
+
   plot <- ggplot(d) + geom_path(aes_string(x=x, y=y)) + facet_wrap(~pred)
   plot <- plot + labs(y=str_c(y, " of incorrect predictions"), x=str_c("prediction ", x))
 
   return(plot)
 }
+
+
+#--------------------------------------------------------------------------
+# Test data
+
+#
+# set.seed(123)
+# n <- 5
+# cat <- letters[1:n]
+# pred <- cat[ceiling(runif(50)*n)]
+# n <- 5
+# cat <- letters[1:n]
+# true <- cat[ceiling(runif(50)*n)]
+# x <- confusion_matrix(pred, true)
+#
+# norm <- rowSums(x)
+# rowSums(x/norm)
+#
+# norm <- colSums(x)
+# colSums(t(t(x)/norm))
+#
+# autoplot(x)
+# autoplot(x)
+# autoplot(x, norm="row")
+# autoplot(x, norm="col")
+# autoplot(x, norm="col", trans=log)
+# autoplot(x, norm="col", trans=sqrt)
+# autoplot(x, trans=sqrt)
+#
