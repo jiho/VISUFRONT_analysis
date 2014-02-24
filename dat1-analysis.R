@@ -1246,6 +1246,75 @@ abund.m3$data <- "Plankton nets"
 
 
 
+# Plots of larval fish STANDARDIZED ABUNDANCE
+ggplot() + 
+	geom_contour(aes(z=-z, x=x, y=y), colour="gray70", data=bathyDF) +
+	geom_polygon(aes(x=lon, y=lat), data=coast, fill="grey60") +  
+	geom_point(aes(x=lon, y=lat, size=sum), colour="gray20", data=abund.vol[which(abund.vol$date %in% c("2013-07-18", "2013-07-19", "2013-07-26")), ]) + 
+	scale_size_area("Relative Abund") +
+	scale_x_continuous("Latitude") +
+	scale_y_continuous("Longitude") +
+	coord_map(xlim=c(7.1,8.1), ylim=c(43.2,43.75))
+
+
+
+# For larval fish diversity NUMBER OF SPECIES
+ggplot() + 
+	geom_contour(aes(z=-z, x=x, y=y), colour="gray70", data=bathyDF) +
+	geom_polygon(aes(x=lon, y=lat), data=coast, fill="grey60") +  
+	geom_point(aes(x=lon, y=lat, size=species), colour="gray20", data=abund.vol) + 
+	geom_text(aes(x=lon, y=lat, label="Boussole"), data=Boussole, color="gray60", vjust=2, hjust=1, size=4) +
+	scale_size("Species", breaks=c(2, 5, 10)) +
+	scale_x_continuous("Latitude") +
+	scale_y_continuous("Longitude") +
+	coord_map(xlim=c(7.1,8.1), ylim=c(43.2,43.75))
+
+
+
+# For larval fish diversity OTHER THAT COASTAL (pelagic, mesopelagic and benthopelagic)
+ggplot() + 
+	geom_contour(aes(z=-z, x=x, y=y), colour="gray70", data=bathyDF) +
+	geom_polygon(aes(x=lon, y=lat), data=coast, fill="grey60") +  
+	geom_point(aes(x=lon, y=lat, size=abundance), colour="gray20", data=abund[-which(abund$habitat %in% "coastal"), ]) + 
+	geom_point(aes(x=lon, y=lat), data=Boussole, color="gray60") + 
+	geom_text(aes(x=lon, y=lat, label="Boussole"), data=Boussole, color="gray60", vjust=2, hjust=1, size=4) +
+	scale_size("Abundance offshore") +
+	scale_x_continuous("Latitude") +
+	scale_y_continuous("Longitude") +
+	coord_map(xlim=c(7.1,8.1), ylim=c(43.2,43.75))
+
+
+# For larval fish diversity OTHER THAT COASTAL (pelagic, mesopelagic and benthopelagic)
+ggplot() + 
+	geom_contour(aes(z=-z, x=x, y=y), colour="gray70", data=bathyDF) +
+	geom_polygon(aes(x=lon, y=lat), data=coast, fill="grey60") +  
+	geom_point(aes(x=lon, y=lat, size=abundance), colour="gray20", data=abund[which(abund$habitat %in% "mesopelagic"), ]) + 
+	geom_point(aes(x=lon, y=lat), data=Boussole, color="gray60") + 
+	geom_text(aes(x=lon, y=lat, label="Boussole"), data=Boussole, color="gray60", vjust=2, hjust=1, size=4) +
+	scale_size("Abundance Meso") +
+	scale_x_continuous("Latitude") +
+	scale_y_continuous("Longitude") +
+	coord_map(xlim=c(7.1,8.1), ylim=c(43.2,43.75))
+
+
+
+
+# For larval fish diversity OTHER THAT COASTAL (pelagic, mesopelagic and benthopelagic)
+ggplot() + 
+	geom_contour(aes(z=-z, x=x, y=y), colour="gray70", data=bathyDF) +
+	geom_polygon(aes(x=lon, y=lat), data=coast, fill="grey60") +  
+	geom_point(aes(x=lon, y=lat, size=order), colour="gray20", data=abund[which(abund$habitat %in% "coastal"), ]) + 
+	geom_point(aes(x=lon, y=lat), data=Boussole, color="gray60") + 
+	geom_text(aes(x=lon, y=lat, label="Boussole"), data=Boussole, color="gray60", vjust=2, hjust=1, size=4) +
+	scale_size("Abundance coastal") +
+	scale_x_continuous("Latitude") +
+	scale_y_continuous("Longitude") +
+	coord_map(xlim=c(7.1,8.1), ylim=c(43.2,43.75))
+
+
+
+
+
 
 #---------------------------------------------
 #                   TODO
