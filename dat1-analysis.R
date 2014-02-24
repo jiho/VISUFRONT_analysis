@@ -7,7 +7,7 @@
 #
 # Working on transect cross - front 04
 # It's a night transect
-# Profil validated : 01, 03, 05, 09, 13, 17, 25 (?)
+# Profil validated : 01, 03, 05, 09, 13, 17, 25
 #
 # A .Rprofile file should be set personnaly to the directory where the data are stored (dropbox)
 
@@ -15,8 +15,8 @@
 dir <- "/Users/faillettaz/Dropbox/visufront-data/"
 
 # set options for ploting
-opts <- theme(axis.title.y= element_text(angle=90, vjust=0.5, size=15), axis.title.x= element_text(angle=0, vjust=0.5, size=15)) + 
-theme(axis.text.x  = element_text(angle=0, vjust=0.5, size=13), axis.text.y  = element_text(angle=0, vjust=0.5, size=13))
+opts <- theme(axis.title.y= element_text(angle=90, vjust=0.5, size=18), axis.title.x= element_text(angle=0, vjust=0.5, size=18)) + 
+theme(axis.text.x  = element_text(angle=0, vjust=0.5, size=15), axis.text.y  = element_text(angle=0, vjust=0.5, size=15))
 
 
 library("plyr")
@@ -27,10 +27,11 @@ library("grid")
 library("gridExtra")
 library("akima")
 library("fields")
+library("oce")   
 
 
 source("lib_zooprocess.R")
-source("data/lib_plot.R")
+source("lib_plot_rf.R")
 source("lib_process.R")
 
 
@@ -40,7 +41,7 @@ files <- list.files(str_c(dir, "zooprocess/"), full = T)
 dat1 <- files[which(str_detect(files, "_dat1.txt") == T)]
 datfiles <- files[which(str_detect(files, "_datfile.txt") == T)]
 
-pids <- NA
+
 pids <- adply(dat1, 1, function(x) {
 
 pid <- read.pid(x)
@@ -59,19 +60,24 @@ if (length(validationColumns) > 1) {
 }
 
 names(pid) <- names
-rbind(pids, pid)
+return(pid)
 
 }, .progress="text")  
-pids <- pids[-1, -1]
 
-# check for NAs
-pids[which(is.na(pids)), ]
 
-# delete them if any
-if (dim(pids[which(is.na(pids)), ])[1] > 0) {
-   pids <- pids[-which(is.na(pids)), ] 
-}
+pids <- pids[, -1]
 
+
+
+# # check for NAs
+# length(which(is.na(pids)))
+# 
+# # delete them if any
+# if (dim(pids[which(is.na(pids)), ])[1] > 0) {
+#    pids <- pids[-which(is.na(pids)), ] 
+# }
+
+# !!!!!! NA check isn't correct
 
 
 
@@ -241,7 +247,7 @@ vol <- adply(datfiles, 1, function(x) {
     vol <- vol[, -1]
     
 head(vol)
-length(which(is.na(vol)))  # if 0 --> OK
+length(which(is.na(vol$vol.m3)))  # if 0 --> OK
 
 
 
@@ -256,12 +262,9 @@ bioFull$abund.m3 <- bioFull$Abund / bioFull$vol.m3
 
 
 # NAs
-length(which(is.na(bioFull)))  # if 0 --> OK
-bioFull[which(str_detect(rownames(bioFull), "NA")), ]
-bioFull[which(is.na(bioFull)), ]
+length(which(is.na(bioFull$nb.img)))  # if 0 --> OK
 
-
-if (dim(bioFull[which(is.na(bioFull)), ])[1] > 0) {
+if (dim(bioFull[which(is.na(bioFull$abund.m3)), ])[1] > 0) {
     bioFull <- bioFull[-which(is.na(bioFull$nb.img)), ]   # Only some column work, weird. It seems to be from the vol object after joining
 }
 
@@ -271,7 +274,7 @@ if (dim(bioFull[which(is.na(bioFull)), ])[1] > 0) {
 #---------------------------------------------------------
 
 # Read physical data from transect 4
-phy <- read.csv(str_c(dir, "/isiis.csv"), header=T, sep=",")
+phy <- read.csv(str_c(dir, "ISIIShydro/transects/cross_current_4//isiis.csv"), header=T, sep=",")
 head(phy)
 # delete first line (data from previous transect)
 phy <- phy[-1, ]
@@ -293,58 +296,58 @@ ggplot(d, aes(x=distanceFromVlfr, y=-Depth.m, colour=Salinity.PPT))  + geom_poin
 #        GLIDER DATA
 #-----------------------------------
 
-# Add glider data that to complete the profile
-g <- read.csv("~/Desktop/PhD/VISUFRONT/ISIIS/glider/glier-d25.csv", sep=",", header=T)
-head(g)
-
-
-# check path
-ggplot(g) + geom_path(aes(x=distance, y=ipressure, colour= substring(dateTime, 1, 10)))
-
-# get data from cast 1 to 4
-g[which(round(g$distance) == 7), ]
-min(g$distance)
-
-
-# select data to keep 
-# keep only variable of interest
-g <- g[which(g$ipressure < 103 & g$distance < 7.2), names(g) %in% c("distance", "ipressure", "salinity")]
-
-
-d_short <- d[ , names(d) %in% c("distanceFromVlfr", "Depth.m", "Salinity.PPT")]
-head(d_short)
-
-colnames(g) <- names(d_short)
-head(g)
-
-dg <- rbind(d_short, g)
-head(dg)
-
-
-# compute interpolation 
-# interpolate all variables
-dm <- melt(dg, id.vars=c("Depth.m", "distanceFromVlfr"), measure.vars=c("Salinity.PPT"))#, "Temp.C", "Fluoro.volts", "Oxygen.ml.l"))
-
-
-# First interpolation over a large grid
-di <- ddply(dm, ~variable, function(x) {
-    x <- na.omit(x)
-    xi <- interp.dist(x=x$distanceFromVlfr, y=x$Depth.m, z=x$value, duplicate="mean", x.step=500, y.step=2.5, anisotropy=1300)
-}, .progress="text")
-
-di <- rename(di, c("x"="distance", "y"="Depth.m"))
-
-plots <- dlply(di, ~variable, function(x) {
-        ggplot(x, aes(x=distance, y=-Depth.m)) +
-        #geom_point(aes(fill=value), shape=21, colour=NA, na.rm=T) +
-        geom_tile(aes(fill=value), na.rm=T) +
-        stat_contour(aes(z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-        scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
-        scale_x_continuous(expand=c(0,0)) +
-        scale_y_continuous(expand=c(0,0))
-        })
-
-        do.call(grid.arrange, c(plots,list(ncol=1)))
+# # Add glider data that to complete the profile
+# g <- read.csv("~/Desktop/PhD/VISUFRONT/ISIIS/glider/glier-d25.csv", sep=",", header=T)
+# head(g)
+# 
+# 
+# # check path
+# ggplot(g) + geom_path(aes(x=distance, y=ipressure, colour= substring(dateTime, 1, 10)))
+# 
+# # get data from cast 1 to 4
+# g[which(round(g$distance) == 7), ]
+# min(g$distance)
+# 
+# 
+# # select data to keep 
+# # keep only variable of interest
+# g <- g[which(g$ipressure < 103 & g$distance < 7.2), names(g) %in% c("distance", "ipressure", "salinity")]
+# 
+# 
+# d_short <- d[ , names(d) %in% c("distanceFromVlfr", "Depth.m", "Salinity.PPT")]
+# head(d_short)
+# 
+# colnames(g) <- names(d_short)
+# head(g)
+# 
+# dg <- rbind(d_short, g)
+# head(dg)
+# 
+# 
+# # compute interpolation 
+# # interpolate all variables
+# dm <- melt(dg, id.vars=c("Depth.m", "distanceFromVlfr"), measure.vars=c("Salinity.PPT"))#, "Temp.C", "Fluoro.volts", "Oxygen.ml.l"))
+# 
+# 
+# # First interpolation over a large grid
+# di <- ddply(dm, ~variable, function(x) {
+#     x <- na.omit(x)
+#     xi <- interp.dist(x=x$distanceFromVlfr, y=x$Depth.m, z=x$value, duplicate="mean", x.step=500, y.step=2.5, anisotropy=1300)
+# }, .progress="text")
+# 
+# di <- rename(di, c("x"="distance", "y"="Depth.m"))
+# 
+# plots <- dlply(di, ~variable, function(x) {
+#         ggplot(x, aes(x=distance, y=-Depth.m)) +
+#         #geom_point(aes(fill=value), shape=21, colour=NA, na.rm=T) +
+#         geom_tile(aes(fill=value), na.rm=T) +
+#         stat_contour(aes(z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
+#         scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+#         scale_x_continuous(expand=c(0,0)) +
+#         scale_y_continuous(expand=c(0,0))
+#         })
+# 
+# do.call(grid.arrange, c(plots,list(ncol=1)))
 
 
 
@@ -515,15 +518,17 @@ unique(biophy$cast)
 table(biophy$DepthBin)
 table(biophy$cast)
 
-dim(biophy[which(is.na(biophy)), ])
+dim(biophy[which(is.na(biophy$Salinity.PPT)), ])
 
 
 # remove NAs
-if (dim(biophy[which(is.na(biophy)), ])[1] > 0) {
-    biophy <- which(is.na(biophy[-which(is.na(biophy$Depth)), ]))   # other columns are <NA> so not recognized as NAs
+if (dim(biophy[which(is.na(biophy$Salinity.PPT)), ])[1] > 0) {
+    biophy <- which(is.na(biophy[-which(is.na(biophy$Salinity.PPT)), ]))   # other columns are <NA> so not recognized as NAs
 }
 head(biophy)
 
+
+# try w/ 1 variable only
 sal <- di2[which(di2$variable == "Salinity.PPT"), ]
 
 ggplot() + 
@@ -544,11 +549,7 @@ scale_y_continuous(expand=c(0,0))
 #------------------------------------------------------
 
 # Here, we use image.smooth that does the extrapolation on the left of the plot and make it nicer
-
 head(biophy)
-xy <- biophy[, c("distanceFromVlfr", "Depth.m")]
-
-# Select variables
 
 
 # interpolate like above for each variable
@@ -562,18 +563,18 @@ i <- dlply(di, ~variable, function(x) {
     z1 <- x$value
     
     # run linear interpolation
-    i <- interp(x=x1, y=y1, z=z1, xo=seq(0, max(x1), by=0.2), yo=seq(0, max(y1), by=0.2),  linear = T, duplicate = "mean", extrap=F)
+    i <- interp(x=x1, y=y1, z=z1, xo=seq(0, max(x1), by=0.1), yo=seq(0, max(y1), by=0.1),  linear = T, duplicate = "mean", extrap=F)
     
     return(i)
 }, .progress="text")
 
 
 # Create the grid for the nex interpolation w/ extrapolation
-grid <- data.frame(x=seq(0, max(x), by=0.1), y=seq(0, max(y), length=length(seq(0, max(x), by=0.1))))
+grid <- data.frame(x=seq(0, max(i$Salinity.PPT$x), by=0.1), y=seq(0, max(i$Salinity.PPT$y), length=length(seq(0, max(i$Salinity.PPT$x), by=0.1))))
 
 iS <- ldply(i, function(x) {
     # run smoothing
-    smooth <- image.smooth(x, grid=grid, theta=0.22)
+    smooth <- image.smooth(x, grid=grid, theta=0.28)
     
     # pass the list to df
     out <- melt(smooth$z, varnames=c("x","y"))
@@ -590,6 +591,7 @@ unique(iS$variable)
 
 
 # plot it 
+pdf("CTD.pdf", height = 15, width=10)
 plots <- dlply(iS, ~variable, function(x) {
         ggplot(x, aes(x=distance, y=Depth.m)) +
         #geom_point(aes(fill=value), shape=21, colour=NA, na.rm=T) +
@@ -655,8 +657,17 @@ biophy[, c("sal", 'Salinity.PPT', 'Depth.m')]
 
 
 #---------------------------------------------
-#           Plot ship trajectory 
+#          Get physical data for BRT
 #---------------------------------------------
+
+# Create the grid for interp surface
+xy <- biophy[, c("distanceFromVlfr", "Depth.m")]
+
+# Interp physical data per bin
+biophy$sal <- interp.surface(smooth, xy)
+
+# Check if seems fine
+biophy[, c("sal", 'Salinity.PPT', 'Depth.m')]
 
 
 
@@ -692,8 +703,8 @@ opts
 
 
 # read coastline to plot the trajectories and check
-coast <- read.csv("map/cote_azur.csv")
-load(str_c(dir, "/map/coast_bathy.RData"))
+coast <- read.csv(str_c(dir, "map/gshhg_coteazur_i.csv"))
+load(str_c(dir, "map/coast_bathy.RData"))
 
 # read stations position
 station <- read.csv(str_c(dir, "/nets/station-regent-visufront.csv"), header=T, sep=";")
@@ -707,16 +718,13 @@ lonBits <- str_split_fixed(station$lon_out, fixed("."), 2)
 station$lon <- as.numeric(lonBits[,1]) + (as.numeric(lonBits[,2])/60)
 station$lon <- 7 + station$lon/60
 
-# Add Boussole as the reference point
-Boussole <- data.frame(lat=43.38, lon=7.83)
-
-p <- ggplot(mapping=aes(x=lon, y=lat)) + 
+# plot station position
+ggplot(mapping=aes(x=lon, y=lat)) + 
 	geom_polygon(data=coast, fill="grey60") + 
 	geom_point(aes(color=date), data=station, size=3) + 
 	geom_text(data=station, label=station$station_nb, vjust=2) + 
 	geom_point(data=Boussole, color="blue") + 
 	coord_map(xlim=c(7,8.1), ylim=c(43.2,43.75))
-print(p)
 
 
 
@@ -724,31 +732,15 @@ print(p)
 # read ship trajectory from ts
 filenames <- list.files(str_c(dir, "/TS/"))
 
-
-
 s <- adply(filenames, 1, function(x) {
 	s <- read.ts(str_c(dir, "/TS/",x))
 	return(s)
 	}, .progress="text")
 
-ggplot(mapping=aes(x=lon, y=lat)) + 
-#	geom_raster(aes(fill=-z, x=x, y=y), data=bathyDF) + 
-	geom_contour(aes(z=-z, x=x, y=y), colour="gray80", data=bathyDF, size=0.3) + 
-	geom_polygon(fill="gray25", data=coast, aes(x=lon, y=lat)) +
-	geom_point(data=station, size=4, colour= "gray40") + 
-	geom_path(size=0.35, na.rm=T, data=s, colour="gray20") + # ship track 
-#	geom_text(data=station, label=station$station_nb, vjust=2) + 
-#	geom_point(aes(x=lon, y=lat), data=Boussole, color="blue") +
-#	geom_text(aes(x=lon, y=lat, label="Boussole"), data=Boussole, color="blue", vjust=2, hjust=1, size=4) +
-	scale_x_continuous("Longitude", expand=c(0,0)) + 
-	scale_y_continuous("Latitude", expand=c(0,0)) +
-#	scale_fill_gradient(name="Depth") +
-	scale_color_discrete("") + 
-	coord_quickmap(xlim=c(6.9, 8.05), ylim=c(43.24, 43.75)) +
-	theme_bw() + opts
 
+# Plot ship trajectory and stations
+ggplot(mapping=aes(x=lon, y=lat)) + geom_contour(aes(z=-z, x=x, y=y), colour="gray80", data=bathyDF, size=0.3) + geom_polygon(fill="gray25", data=coast, aes(x=lon, y=lat)) + geom_point(data=station, size=4, colour= "gray40") + geom_path(size=0.35, na.rm=T, data=s, colour="gray20") + scale_x_continuous("Longitude", expand=c(0,0)) + scale_y_continuous("Latitude", expand=c(0,0)) +scale_color_discrete("") + coord_quickmap(xlim=c(6.9, 8.05), ylim=c(43.24, 43.75)) +theme_bw() + opts
 
-    # Add glider data that to complete the profile
 g <- read.csv("~/Desktop/PhD/VISUFRONT/ISIIS/glider/glier-d25.csv", sep=",", header=T)
 head(g)
 
@@ -758,16 +750,12 @@ g <- rename(g, c('ilon'='lon', 'ilat'='lat'))
 
 s24_25 <- s[which(s$dateTime > as.POSIXct("2013-07-24 15:00:00") & s$dateTime < as.POSIXct("2013-07-25 05:00:00")), ]
 
-ggplot(mapping=aes(x=lon, y=lat)) +
-	#geom_raster(aes(fill=-z, x=x, y=y), data=bathyDF) +
-	geom_contour(aes(z=-z, x=x, y=y), colour="gray70", data=bathyDF) +
+ggplot(mapping=aes(x=lon, y=lat)) + geom_contour(aes(z=-z, x=x, y=y), colour="gray70", data=bathyDF) + geom_polygon(fill="gray25", data=coast, aes(x=lon, y=lat)) + geom_path(size=0.4, na.rm=T, data=s24_25) + geom_point(size=2, data=g)+ scale_x_continuous("Longitude", expand=c(0,0)) + scale_y_continuous("Latitude", expand=c(0,0)) + coord_quickmap(xlim=c(6.8, 8.1), ylim=c(43.2, 43.75)) + theme_bw()
+
 	geom_polygon(fill="gray25", data=coast, aes(x=lon, y=lat)) +
-	geom_path(size=0.4, na.rm=T, data=s24_25) + # ship track
-    geom_point(size=2, data=g)+
-	scale_x_continuous("Longitude", expand=c(0,0)) +
+    geom_point(aes(x=lon, y=lat, size=abund.norm, colour=data), data=fishab) +
+    scale_x_continuous("Longitude", expand=c(0,0)) + 
 	scale_y_continuous("Latitude", expand=c(0,0)) +
-	coord_quickmap(xlim=c(6.8, 8.1), ylim=c(43.2, 43.75)) +
-	theme_bw()
 
 
 
