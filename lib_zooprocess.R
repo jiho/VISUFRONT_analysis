@@ -1,5 +1,5 @@
 #
-#      Deal with files used by zooprocess and PlanktonIdentifier   
+#      Deal with files and variables used by zooprocess and PlanktonIdentifier
 #
 #  (c) Copyright 2013 Jean-Olivier Irisson
 #      GNU General Public License v3
@@ -23,7 +23,7 @@ read.pid <- function(file, metadata=FALSE) {
   dataIdx <- which(str_detect(d, fixed("[Data]")))
 
   # read data table
-  # NB: we skipped the first line in the scan() call above, so the line numbers in the file are those computed here + 1, hence the dataIdx+1 
+  # NB: we skipped the first line in the scan() call above, so the line numbers in the file are those computed here + 1, hence the dataIdx+1
   dt <- read.table(file, skip=dataIdx+1, sep=";", header=T, as.is=T)
   names(dt)[1] <- "Item"
 
@@ -32,7 +32,7 @@ read.pid <- function(file, metadata=FALSE) {
   names <- str_replace_all(names, "pred_valid_Id_", "Valid")
   # force latest validation to have the name "Valid"
   validationColumns <- which(str_detect(names, "Valid"))
-  names[max(validationColumns)] <- "Valid"    
+  names[max(validationColumns)] <- "Valid"
   names(dt) <- names
 
   if (metadata) {
@@ -67,7 +67,7 @@ read.pid <- function(file, metadata=FALSE) {
         # store it
         m[[count]][metaName] <- metaData
       }
-    }    
+    }
 
     # attach meta data as attribute
     attr(dt, "meta") <- m
@@ -78,6 +78,13 @@ read.pid <- function(file, metadata=FALSE) {
 
 
 read.pids.in.project <- function(project, ...) {
+  #
+  # Walk the hierachy of a zooprocess project and read the pid + dat1.txt files for all "profiles" in the project merging the information in both
+  # pid = image characteristics
+  # dat1 = identification
+  #
+  # project   path to the project directory
+
   library("stringr")
   library("plyr")
 
@@ -87,12 +94,12 @@ read.pids.in.project <- function(project, ...) {
 
   dat1Files <- str_replace(pidFiles, "pid$", "txt")
   dat1Files <- str_replace(dat1Files, fixed("/Pid_results/"), "/Pid_results/Dat1_validated/")
-  
+
   # read all files
   D <- ldply(1:length(pidFiles), function(i, pid, dat, ...) {
     # read pid
     p <- read.pid(pid[i], ...)
-    
+
     # look for dat1 and read identifications from it when present
     if (file.exists(dat[i])) {
       d <- read.pid(dat[i], ...)
@@ -104,15 +111,20 @@ read.pids.in.project <- function(project, ...) {
     } else {
       warning("No dat1.txt file for pid: ", basename(pid[i]), "\nIdentifications (prediction and validation) will be absent", call.=FALSE)
     }
-    
+
     return(p)
   }, pid=pidFiles, dat=dat1Files, ...)
-  
+
   return(D)
 }
 
 
 read.learning.set.in.project <- function(project) {
+  #
+  # Walk the hierachy of a zooprocess project and read the pid file corresponding to the learning set
+  #
+  # project   path to the project directory
+
   library("stringr")
 
   learningSetFiles <- list.files(str_c(project, "/PID_process/Learning_set/"), pattern="pid$")
@@ -124,7 +136,7 @@ read.learning.set.in.project <- function(project) {
   }
   learn <- read.csv(str_c(project, "/PID_process/Learning_set/", learningSetFile), sep=";", skip=1, stringsAsFactors=FALSE)
   names(learn)[1] <- "Item"
-  
+
   return(learn)
 }
 
@@ -135,11 +147,10 @@ get.prediction.variables <- function(x, var.removed=c("X", "Y", "XM", "YM", "BX"
   #
   # x             data.frame from which to select/compute the variables, usually read with read.pid
   # var.removed   names of variables to remove
-  #
 
   library("stringr")
   library("plyr")
-  
+
   # select only variables useful for prediction
   # = remove variables provided in the arguments (usually variables denoting position or so, which are not meaningful for prediction) + identification variables
   x <- x[, ! names(x) %in% c(var.removed, "X.Item", "Item", "Tag", "Ident", "Status", "Pred", "Valid", "Label")]
@@ -186,21 +197,21 @@ presort.category <- function(project, category) {
   if ( ! file.exists(project) ) {
     stop("Cannot find project ", project)
   }
-  
+
   # get prediction folder
   pred <- list.files(str_c(project, "/PID_process/Sorted_vignettes/"))
   categoryDir <- str_c(project, "/PID_process/Sorted_vignettes/", pred, "/", category)
   if ( ! file.exists(categoryDir) ) {
     stop("Cannot find predicted images for category ", category)
   }
-  
+
 
   message("Learn identifications from learning set")
   # read learning set
   learn <- read.learning.set.in.project(project)
   learnIDs <- learn$Ident
   learnVars <- get.prediction.variables(learn)
-  
+
   # fit model on learning set
   m <- randomForest(x=learnVars, y=factor(learnIDs), ntree=300)
 
@@ -212,7 +223,7 @@ presort.category <- function(project, category) {
   profile <- meta$profileid
   # NB: there could be several, so we should make a loop or something at this point
   #     but so far we have only used one and we will only code for this situation
-  
+
   # get all images in category of interest
   imgs <- list.files(categoryDir, pattern="jpg$")
 
@@ -230,7 +241,7 @@ presort.category <- function(project, category) {
 
   # get corresponding lines
   pidCat <- pid[imgNbs,]
-    
+
   message("Predict relevance score for those images")
   # predict probability to be in each category from the model fitted on the learning set
   pidCatVars <- get.prediction.variables(pidCat)
@@ -245,13 +256,13 @@ presort.category <- function(project, category) {
   n <- 5    # number of digits to consider
   score <- formatC(pCat*10^5, format="d", width=5, flag=0)
   dest <- str_c(score, "--", source)
-  
+
   source <- str_c(categoryDir, source, sep="/")
   dest <- str_c(categoryDir, dest, sep="/")
-  
+
   # file.rename(source, dest)
   # !! looooooong !!
-  
+
   nbImgs <- length(source)
   l_ply(1:nbImgs, function(i, s, d) {
     system(str_c("mv \"", s[i], "\" \"", d[i], "\""))
@@ -269,7 +280,6 @@ revert.presorting <- function(project) {
   # This removes the pre-pended probabilities for all images in the given project
   #
   # project   project path
-  #
 
   library("stringr")
   library("plyr")
@@ -278,7 +288,7 @@ revert.presorting <- function(project) {
   if ( ! file.exists(project) ) {
     stop("Cannot find project ", project)
   }
-  
+
   # list images to which the proba was added at the beginning of the name
   vignettesDir <- str_c(project, "/PID_process/Sorted_vignettes/")
   imgs <- list.files(vignettesDir, pattern="^[0-9]*--.*\\.jpg$", recursive=TRUE)
