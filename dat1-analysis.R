@@ -1121,6 +1121,123 @@ s24_25 <- s[which(s$dateTime > as.POSIXct("2013-07-24 15:00:00") & s$dateTime < 
 
 ggplot(mapping=aes(x=lon, y=lat)) + geom_contour(aes(z=-z, x=x, y=y), colour="gray70", data=bathyDF) + geom_polygon(fill="gray25", data=coast, aes(x=lon, y=lat)) + geom_path(size=0.4, na.rm=T, data=s24_25) + geom_point(size=2, data=g)+ scale_x_continuous("Longitude", expand=c(0,0)) + scale_y_continuous("Latitude", expand=c(0,0)) + coord_quickmap(xlim=c(6.8, 8.1), ylim=c(43.2, 43.75)) + theme_bw()
 
+
+
+
+
+
+
+#---------------------------------------------------------
+#          COMPUTE ABUNDANCE PER VOL PLKT NETS
+#---------------------------------------------------------
+
+
+# Read abundance at stations
+fl_nets <- read.csv(str_c(dir, "/nets/visufront-fish-larvae.csv"), sep=";", h=T)
+head(fl_nets)
+
+# COUNTS
+sum(fl_nets$larvae_nb) # 675 fish larvae
+sum(station$larvae) # 677 -> 2 cephalopodidae (?)
+sum(station$eggs) # 548 eggs
+length(unique(fl_nets$order)) # 13 orders
+length(unique(fl_nets$family)) # 29 families
+
+# species nb
+species <- unique(str_c(str_c(fl_nets$genera, fl_nets$sp, sep=" "), str_c(" (", fl_nets$descriptor, ")")))
+length(species)  # 47 species
+
+# Read species list with their related habitats
+#write.table(species, "species-only.csv", row.names=F, col.names=F)
+species <- read.csv(str_c(dir, "nets/species.csv"), h=T, sep=";")
+species$species <- as.character(species$species)
+
+# add a column with the species name in the fl_nets
+fl_nets$species <- str_c(str_c(fl_nets$genera, fl_nets$sp, sep=" "), str_c(" (", fl_nets$descriptor, ")"))
+
+# add a column to the stations to join it to the fish abundance
+station$station <- str_c("station_", station$station_nb)
+d <- join(fl_nets, station, by="station")
+d <- join(d, species)
+
+
+#------------------------------------------
+# Compute abundance per volume unit
+#------------------------------------------
+
+# 1st method = standardized abundance by volume using volumeter. 
+#-------------------------------------------------------------------
+# NB : Volume unit remains unknown
+
+# compute abundance stadardized per volume unit for stations from day 24 only
+# NB : volume unit is unkown here, only based on the volumeter diff between in and out, but it already makes absolute data comparable
+abund.vol <- ddply(d, .(station, habitat, date), function(x){
+    data.frame(sum=sum(x$larvae_nb), 
+    abundance = sum(x$larvae_nb) / (x$vol_out[1]-x$vol_in[1]), 
+    order = length(unique(x$order)), 
+    family = length(unique(x$family)), 
+    species = length(unique(x$sp)), 
+    lat=x$lat[1], lon=x$lon[1], date=x$date[1])
+    })
+
+head(abund.vol)
+
+
+
+# 2nd method = compute sampled volume using speed and distance
+#------------------------------------------------------------------
+
+# select variables  of lon and lat
+station <- ddply(d, ~station, function(x){
+    data.frame(lon=unique(x$lon), lat=unique(x$lat),
+    latin=unique(x$lat_in), lonin=unique(x$lon_in),
+    latout=unique(x$lat_out), lonout=unique(x$lon_out), 
+    time_in = str_c("2013-07-18 ", unique(x$time_start)),
+    time_out = str_c("2013-07-18 ", unique(x$time_end)),
+    larvae_tot = unique(x$larvae)) })
+
+
+# compute and format lat and lon for stations
+latBits <- str_split_fixed(station$latout, fixed("."), 2)
+station$lat_out <- as.numeric(latBits[,1]) + (as.numeric(latBits[,2])/60)
+station$lat_out <- 43 + station$lat_out/60
+latBits <- str_split_fixed(station$latin, fixed("."), 2)
+station$lat_in <- as.numeric(latBits[,1]) + (as.numeric(latBits[,2])/60)
+station$lat_in <- 43 + station$lat_in/60
+
+lonBits <- str_split_fixed(station$lonout, fixed("."), 2)
+station$lon_out <- as.numeric(lonBits[,1]) + (as.numeric(lonBits[,2])/60)
+station$lon_out <- 7 + station$lon_out/60
+lonBits <- str_split_fixed(station$lonin, fixed("."), 2)
+station$lon_in <- as.numeric(lonBits[,1]) + (as.numeric(lonBits[,2])/60)
+station$lon_in <- 7 + station$lon_in/60
+
+
+# compute distance and time per station
+dist_time <- ddply(station, ~station, function(x){
+    difftime <- difftime(as.POSIXct(x$time_out), as.POSIXct(x$time_in))
+    dist.m <- geodDist(lat1=x$lat_in, lon1=x$lon_in, lat2=x$lat_out, lon2=x$lon_out, alongPath=F)
+    time <- as.numeric(difftime) * 60
+    speed <- dist.m / time * 1000
+    vol.s <- speed * pi * 1^2  # pi.r^2 = 0.78 m^2
+    vol.m3 <- vol.s * time 
+    return(data.frame(vol.m3))})
+
+
+# Very bad but some positions may be wrong so I fill replace them by possibly consistent values
+dist_time[which(dist_time$station =="station_7"), "vol.m3"] <- 350
+dist_time[which(dist_time$station =="station_2"), "vol.m3"] <- 330
+dist_time[which(dist_time$station =="station_15"), "vol.m3"] <- 650
+
+
+# join station sampled volume and larval abundances
+abund.m3 <- join(station, dist_time)
+abund.m3
+
+abund.m3$abund.m3 <- abund.m3$larvae_tot / abund.m3$vol.m3
+abund.m3$abund.m3.norm <- abund.m3$abund.m3 / max(abund.m3$abund.m3)
+abund.m3$data <- "Plankton nets"
+
 	geom_polygon(fill="gray25", data=coast, aes(x=lon, y=lat)) +
     geom_point(aes(x=lon, y=lat, size=abund.norm, colour=data), data=fishab) +
     scale_x_continuous("Longitude", expand=c(0,0)) + 
