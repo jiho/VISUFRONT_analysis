@@ -1036,6 +1036,10 @@ biophy[, c("sal", 'Salinity.PPT', 'Depth.m')]
 
 
 
+#---------------------------------------------
+#           Plot ship trajectory 
+#---------------------------------------------
+
 # YO-YOs
 
 # overplot ISIIS trajectory over physical data
@@ -1048,21 +1052,17 @@ updw[which(updw$cast %in% processed), "Done"] <- "Processed"
 updw[which(is.na(updw$Done)), "Done"] <-  "To be processed"
 
 
-# select a single variable to go faster
-sal <- out
-
+pdf("yoyos.pdf", width = 9, height = 4)
 ggplot() +
-geom_raster(aes(x=distance, y=Depth.m, fill=value), data= sal, na.rm=T, ) +
-stat_contour(aes(x=distance, y=Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE, data=sal) +
-geom_line(aes(x=distanceFromVlfr, y=Depth.m, linetype=Done, group=cast), size=0.5, data=updw) +
-scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
-scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
-scale_y_reverse("Depth (m)", expand=c(0,0)) +
-scale_linetype_manual("", values=c(1, 3)) + 
-opts
-
-
-
+        geom_raster(aes(x=distance, y=Depth.m, fill=value), data= sal, na.rm=T, ) +
+        stat_contour(aes(x=distance, y=Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE, data=sal) +
+        geom_line(aes(x=distanceFromVlfr, y=Depth.m, linetype=Done, group=cast), size=0.5, data=updw) +
+        scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+        scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
+        scale_y_reverse("Depth (m)", expand=c(0,0)) +
+        scale_linetype_manual("", values=c(1, 3)) + 
+        opts
+dev.off()
 
 
 
@@ -1106,6 +1106,10 @@ s <- adply(filenames, 1, function(x) {
 # Plot ship trajectory and stations
 ggplot(mapping=aes(x=lon, y=lat)) + geom_contour(aes(z=-z, x=x, y=y), colour="gray80", data=bathyDF, size=0.3) + geom_polygon(fill="gray25", data=coast, aes(x=lon, y=lat)) + geom_point(data=station, size=4, colour= "gray40") + geom_path(size=0.35, na.rm=T, data=s, colour="gray20") + scale_x_continuous("Longitude", expand=c(0,0)) + scale_y_continuous("Latitude", expand=c(0,0)) +scale_color_discrete("") + coord_quickmap(xlim=c(6.9, 8.05), ylim=c(43.24, 43.75)) +theme_bw() + opts
 
+
+
+# Add glider data that to complete the profile
+#----------------------------------------------
 g <- read.csv("~/Desktop/PhD/VISUFRONT/ISIIS/glider/glier-d25.csv", sep=",", header=T)
 head(g)
 
