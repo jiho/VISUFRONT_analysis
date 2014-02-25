@@ -12,6 +12,14 @@ spectral <- function(n=6) {
   rev(brewer.pal(name="Spectral", n=n))
 }
 
+scale_fill_spectral <- function(...) {
+  scale_fill_gradientn(colours=spectral(...))
+}
+scale_colour_spectral <- function(...) {
+  scale_colour_gradientn(colours=spectral(...))
+}
+scale_color_spectral <- scale_colour_spectral
+
 # Interpolate a slice of data for which the x-axis is time
 interp.time <- function(x, y, z, nx=length(x)/100, y.step=2.5, ...) {
   library("akima")
