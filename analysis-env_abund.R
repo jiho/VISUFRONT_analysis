@@ -134,24 +134,23 @@ fit.tree <- function(taxon, ...) {
 }
 
 m <- fit.tree("doliolids", xv="1se", xvmult=100, xval=5)
-plot.abund.env.map("doliolids", "Temp.C.anomaly")
-plot.abund.env.map("doliolids", "Fluoro.volts")
 plot.abund.env.map("doliolids", "Oxygen.ml.l")
-plot.abund.env("doliolids", "Fluoro.volts")
+plot.abund.env.map("doliolids", "Fluoro.volts")
 
 m <- fit.tree("ephyrae", xv="1se", xvmult=100, xval=5)
+plot.abund.env.map("ephyrae", "Oxygen.ml.l")
 plot.abund.env.map("ephyrae", "Salinity.PPT")
-plot.abund.env("ephyrae", "Salinity.PPT")
 plot.abund.env("ephyrae", "Oxygen.ml.l")
+plot.abund.env("ephyrae", "Salinity.PPT")
 
 m <- fit.tree("fish", xv="1se", xvmult=100, xval=5)
+plot.abund.env.map("fish", "Temp.C.anomaly")
 plot.abund.env.map("fish", "Salinity.PPT")
-plot.abund.env("fish", "Salinity.PPT")
-plot.abund.env("fish", "Oxygen.ml.l")
 
 m <- fit.tree("radiolarian_dark", xv="1se", xvmult=100, xval=5)
 plot.abund.env.map("radiolarian_dark", "Fluoro.volts")
 plot.abund.env.map("radiolarian_dark", "Oxygen.ml.l")
+plot.abund.env("radiolarian_dark", "Fluoro.volts")
 
 # }
 
