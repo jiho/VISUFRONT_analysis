@@ -25,6 +25,7 @@ source("lib_plot.R")
 
 # get all isiis data
 isiisFiles <- list.files("transects", pattern="isiis.csv", full=TRUE, recursive=TRUE)
+isiisFiles <- "transects/cross_current_4/isiis.csv"
 
 # interpolate all variables for each file
 l_ply(isiisFiles, function(file) {
@@ -62,7 +63,7 @@ l_ply(isiisFiles, function(file) {
   }
   
   # interpolation over a coarse grid
-  eiCoarse <- ddply(eCm, ~variable, my.interp.dist, duplicate="mean", x.step=1000, y.step=2, anisotropy=1200, .progress="text")
+  eiCoarse <- ddply(eCm, ~variable, my.interp.dist, duplicate="mean", x.step=1000, y.step=2, anisotropy=1200, smooth=TRUE, theta=0.5, .progress="text")
   # TODO try kriging
   
   # compute anomalies
