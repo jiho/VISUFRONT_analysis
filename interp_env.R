@@ -41,8 +41,8 @@ l_ply(isiisFiles, function(file) {
     distance <- "distanceFromShore"
   }
   
-  # remove incorrect data: above 28m in downcasts
-  eC <- e[-which(e$down.up %in% "down" & e$Depth.m <= 28), ]
+  # remove incorrect data: above 30m in downcasts
+  eC <- e[-which(e$down.up %in% "down" & e$Depth.m <= 30), ]
   # ggplot(e, aes(x=distanceFromVlfr, y=-Depth.m, colour=down.up)) + geom_point()
   # ggplot(eC, aes(x=distanceFromVlfr, y=-Depth.m, colour=Salinity.PPT))  + geom_point() + scale_colour_spectral()
 
