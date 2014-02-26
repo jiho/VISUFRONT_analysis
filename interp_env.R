@@ -35,7 +35,7 @@ l_ply(isiisFiles, function(file) {
   e <- read.csv(file)
   
   # decide on which distance measure to use
-  if ( str_detect(dir, "along") ) {
+  if ( str_detect(dir, "along") |  str_detect(dir, "lagrangian") ) {
     distance <- "distanceFromStart"
   } else {
     distance <- "distanceFromShore"
