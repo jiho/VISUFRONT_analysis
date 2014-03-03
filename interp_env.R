@@ -25,7 +25,7 @@ source("lib_plot.R")
 
 # get all isiis data
 isiisFiles <- list.files("transects", pattern="isiis.csv", full=TRUE, recursive=TRUE)
-isiisFiles <- "transects/cross_current_4/isiis.csv"
+# isiisFiles <- "transects/cross_current_4/isiis.csv"
 
 # interpolate all variables for each file
 l_ply(isiisFiles, function(file) {
