@@ -29,6 +29,7 @@ shinyServer(function(input, output) {
     d$transect <- input$transect[d$transect]
 
     dm <- melt(d, id.vars=c("transect", "Depth.m", input$dist, "down.up"), measure.vars=input$vars)
+    dm <- na.omit(dm[-which(dm$down.up %in% "down" & dm$Depth.m <= 35), ])
 
     # interpolate every variable
     di <- ddply(dm, ~transect+variable, function(x) {
