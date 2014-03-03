@@ -33,8 +33,7 @@ shinyServer(function(input, output) {
 
     # interpolate every variable
     di <- ddply(dm, ~transect+variable, function(x) {
-      x <- na.omit(x[which(x$down.up=="up"),])
-      xi <- interp.dist(x=x[,input$dist], y=x$Depth.m, z=x$value, duplicate="mean", x.step=input$xstep, y.step=input$ystep)
+      xi <- interp.dist(x=x[,input$dist], y=x$Depth.m, z=x$value, duplicate="mean", x.step=input$xstep, y.step=input$ystep, anisotropy=1300, smooth=TRUE)
     })
     di <- rename(di, c("x"=input$dist, "y"="Depth.m"))
 
