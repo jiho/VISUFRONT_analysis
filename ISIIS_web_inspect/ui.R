@@ -60,7 +60,7 @@ shinyUI(pageWithSidebar(
     div(style="height: 20px"),
 
     # Button to force manual reload of the plot
-    submitButton("Redraw plot"),
+    submitButton("Recompute"),
 
     # make sure we finish the panel correctly
     div(style="height: 1px")
@@ -69,7 +69,9 @@ shinyUI(pageWithSidebar(
   # Show a plot of the selected data
   mainPanel(
     # verbatimTextOutput("sessionInfo"),
-    plotOutput("dataPlot", height="auto")
+    plotOutput("dataPlot", height="auto"),
+    downloadButton('downloadRawData', 'Download raw data'),
+    downloadButton('downloadInterpolatedData', 'Download interpolated data')
     # textOutput("testText")
   )
 ))

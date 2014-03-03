@@ -70,4 +70,24 @@ shinyServer(function(input, output) {
     }
   }, height=plotHeight)
 
+  # Save the extracted data to a csv file
+  output$downloadRawData <- downloadHandler(
+    filename = str_c("visufront-raw-dl_", format(Sys.time(), format="%Y-%m-%d_%H-%M-%S"), ".csv"),
+    content = function(file) {
+      # get selected data
+      d <- get.data()
+      # write it to csv (and make it available for download)
+      write.csv(d$dm, file, row.names=FALSE)
+    }
+  )
+  output$downloadInterpolatedData <- downloadHandler(
+    filename = str_c("visufront-interp-dl_", format(Sys.time(), format="%Y-%m-%d_%H-%M-%S"), ".csv"),
+    content = function(file) {
+      # get selected data
+      d <- get.data()
+      # write it to csv (and make it available for download)
+      write.csv(d$di, file, row.names=FALSE)
+    }
+  )
+
 })
