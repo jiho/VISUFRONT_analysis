@@ -1,6 +1,6 @@
 # -----------------------------------------------------------
 #
-#   Spatial PCA on normalized data to localize the front
+#   Spatial PCA  on physical data to localize the front
 #              Robin Faillettaz, 2014-03-11
 #
 # -----------------------------------------------------------
@@ -115,8 +115,8 @@ ggplot(data=ACP, aes(x=distance, y=-Depth.m)) + geom_raster(aes(fill=pca)) + geo
 
 
 
-#      Now on normalized data 
-#--------------------------------------
+#      Now on anomalies
+#---------------------------------
 
 # Compute mean profile for each variable
 head(d)
@@ -129,7 +129,7 @@ dAvg <- ddply(na.omit(d), ~Depth.m, function(x){
 })
 
 
-# Normalize all profiles 
+# Get anomalies of each variables along the transect per vertical profile
 dN <- na.exclude(ddply(d[which(d$distance < 30), ], ~distance, function(x){
     data.frame(
         depth = x$Depth.m[-1],
@@ -137,7 +137,7 @@ dN <- na.exclude(ddply(d[which(d$distance < 30), ], ~distance, function(x){
         temp = x$Temp.celsius[-1] - dAvg$temp, 
         fluo = x$Fluoro.volts[-1],# - dAvg$fluo,
         oxy = x$Oxygen.ml.l[-1] - dAvg$oxy)
-})) # all variables aren't normalized here just to try
+})) # all variables aren't variables anomalies here, just to try
 
 
 #   Check if ok 
@@ -158,7 +158,7 @@ do.call(grid.arrange, c(plots,list(ncol=1)))
 # it's working
 
 
-# compute the PCA with normalized variables
+# compute the PCA with variables anomalies
 pca <- dN[order(dN$distance),]
 res <- PCA(X=pca[,-c(1,2)], graph=T)
 
@@ -173,7 +173,6 @@ pca$pca13 <- res$ind$coord[,1] + res$ind$coord[,2] + res$ind$coord[,3]
 pca$pca14 <- res$ind$coord[,1] + res$ind$coord[,2] + res$ind$coord[,3] + res$ind$coord[,2]
 
 
-# geom_tile avec geom_contour par dessus
 ggplot(data=pca, aes(x=distance, y=-depth)) + geom_raster(aes(fill=pca14)) + geom_contour(aes(z=pca14), colour="white", bins=5) + scale_fill_gradientn("PCA", colours = spectral()) + scale_x_continuous(name="Distance", expand=c(0,0)) + scale_y_continuous(name="Depth", expand=c(0,0))
 
 
@@ -200,11 +199,12 @@ do.call(grid.arrange, c(plots,list(ncol=2)))
 #-----------------------------------------------------------
 
 
-#   For one variable only
-#-----------------------------
-
 # if updates in the lib_plot
 #source("data/lib_plot.R")
+
+
+#   For one variable only
+#-----------------------------
 
 # delete NAs from the previous interpolation
 i2 <- data.frame(distance = dN$distance, Depth.m = dN$depth, value = ACP$pca)
