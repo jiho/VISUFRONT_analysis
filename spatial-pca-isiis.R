@@ -36,7 +36,7 @@ theme(axis.text.x  = element_text(angle=0, vjust=0.5, size=15), axis.text.y  = e
 
 
 # Read physical data from transect 4
-phy <- read.csv(str_c(dir, "ISIIShydro/transects/cross_current_4//isiis.csv"), header=T, sep=",")
+phy <- read.csv(str_c(dir, "ISIIShydro/transects/cross_current_4/isiis.csv"), header=T, sep=",")
 head(phy)
 # delete first line (data from previous transect)
 phy <- phy[-1, ]
@@ -84,7 +84,6 @@ do.call(grid.arrange, c(plots,list(ncol=1)))
 
 
 
-
 #-------------------------------------------------------------
 #       COMPUTE SPATIAL PCA ON PHYSICAL DATA
 #-------------------------------------------------------------
@@ -107,6 +106,7 @@ res <- PCA(X=ACP[,-c(1,2)], graph=T)
 
 length(res$ind$coord[,2])
 
+# only for one axe
 ACP$pca <- res$ind$coord[,2]
 #colnames(acpM) <- rename(x=colnames(acpM), c(value="ipressure", variable="distance"))
 
@@ -137,7 +137,7 @@ dN <- na.exclude(ddply(d[which(d$distance < 30), ], ~distance, function(x){
         temp = x$Temp.celsius[-1] - dAvg$temp, 
         fluo = x$Fluoro.volts[-1],# - dAvg$fluo,
         oxy = x$Oxygen.ml.l[-1] - dAvg$oxy)
-}))
+})) # all variables aren't normalized here just to try
 
 
 #   Check if ok 
@@ -163,10 +163,11 @@ pca <- dN[order(dN$distance),]
 res <- PCA(X=pca[,-c(1,2)], graph=T)
 
 
-pca$pca1 <- res$ind$coord[,1]# + res$ind$coord[,2]# + res$ind$coord[,3]# + res$ind$coord[,4] 
-pca$pca2 <- res$ind$coord[,2]
-pca$pca3 <- res$ind$coord[,3]  
-pca$pca4 <- res$ind$coord[,4]
+# save all different possibilites
+pca$pca1 <- res$ind$coord[,1] # ~41%
+pca$pca2 <- res$ind$coord[,2] # ~27%
+pca$pca3 <- res$ind$coord[,3] # ~11%
+pca$pca4 <- res$ind$coord[,4] # ~9%
 pca$pca12 <- res$ind$coord[,1] + res$ind$coord[,2]
 pca$pca13 <- res$ind$coord[,1] + res$ind$coord[,2] + res$ind$coord[,3]
 pca$pca14 <- res$ind$coord[,1] + res$ind$coord[,2] + res$ind$coord[,3] + res$ind$coord[,2]
@@ -176,8 +177,7 @@ pca$pca14 <- res$ind$coord[,1] + res$ind$coord[,2] + res$ind$coord[,3] + res$ind
 ggplot(data=pca, aes(x=distance, y=-depth)) + geom_raster(aes(fill=pca14)) + geom_contour(aes(z=pca14), colour="white", bins=5) + scale_fill_gradientn("PCA", colours = spectral()) + scale_x_continuous(name="Distance", expand=c(0,0)) + scale_y_continuous(name="Depth", expand=c(0,0))
 
 
-
-
+# plot all possible representation of the spatial pca
 allPCA <- melt(pca, id.vars = c("depth", "distance"), measure.vars = grep("pca", names(dN), value=TRUE))
 plots <- dlply(allPCA, ~variable, function(x) {
         ggplot(x, aes(x=distance, y=depth)) +
@@ -196,16 +196,18 @@ do.call(grid.arrange, c(plots,list(ncol=2)))
 
 
 
+# Second interpolation over a finer grid for smoothing
+#-----------------------------------------------------------
 
-# Second interpolation over a finer grid for ploting
-#----------------------------------------------------
+
+#   For one variable only
+#-----------------------------
 
 # if updates in the lib_plot
 #source("data/lib_plot.R")
 
 # delete NAs from the previous interpolation
 i2 <- data.frame(distance = dN$distance, Depth.m = dN$depth, value = ACP$pca)
-
 
 # Second interpolation for all variables
 di2 <- interp.smooth(x=i2$distance, y=i2$Depth.m, z=i2$value, x.step = 0.1, y.step = 0.1)
