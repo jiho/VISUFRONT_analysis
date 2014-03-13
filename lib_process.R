@@ -111,7 +111,7 @@ detect.casts <- function(depth, order=200) {
 # Compute the straight line distance from the starting point of a lat,lon trajectory
 dist.from.start <- function(lat, lon) {
 	library("oce")
-	geodDist(lat1=lat, lon1=lon, lat2=na.omit(lat)[1], lon2=na.omit(lon)[1]) * 1.852
+	geodDist(lat1=lat, lon1=lon, lat2=na.omit(lat)[1], lon2=na.omit(lon)[1]) / 1.852
 }
 
 # Compute the distance from Villefranche
@@ -140,7 +140,7 @@ dist.from.shore <- function(lat, lon) {
 
 	# compute distances from this point to every point in the track
 	# TODO should compensate for the length of cable put out and the angle of the cable (i.e. depth of ISIIS)
-	dists <- geodDist(lat1=lat, lon1=lon, lat2=refLat, lon2=refLon)
+	dists <- geodDist(lat1=lat, lon1=lon, lat2=refLat, lon2=refLon) / 1.852
 
 	return(dists)
 }
