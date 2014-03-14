@@ -451,6 +451,24 @@ biophy <- ddply(bioFull, ~cast, function(x) {
     length(which(is.na(dC)))
     
     
+    
+    
+    
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # ADD A DCAST FOR RAW ABUND AND NOT ONLY ABUND.M3
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     print(unique(phyx$cast))
    
     # Bin depth = select middle of each meter
@@ -1238,10 +1256,68 @@ abund.m3$abund.m3 <- abund.m3$larvae_tot / abund.m3$vol.m3
 abund.m3$abund.m3.norm <- abund.m3$abund.m3 / max(abund.m3$abund.m3)
 abund.m3$data <- "Plankton nets"
 
+
+# Compare ISIIS and plankton nets abundances
+#-----------------------------------------------
+
+# get abundance from ISIIS data
+lf_isiis <- biophy[, names(biophy) %in% c("fish", "lat", "lon", "cast")]
+
+# integrate larval fish abundance over profiles
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# x$fish is abund.m3 and not number of larvae
+lf_isiisSummary <- ddply(lf_isiis, ~cast, function(x) {
+data.frame(sum = sum(x$fish), lat = x$lat[1], lon = x$lon[1], data="ISIIS")
+})
+
+
+# compute integrated volume per cast
+volisiis <- ddply(vol, ~cast, function(x){
+    data.frame(vol = sum(unique(x$vol.m3)))
+})
+    
+# join integrated abundance and integrated volume
+isiisvol <- join(lf_isiisSummary, volisiis)
+isiisvol$abund.m3 <- isiisvol$sum / isiisvol$vol
+isiisvol$abund.m3.norm <- isiisvol$abund.m3 / max(isiisvol$abund.m3)
+    
+isiisvol  <- rename(isiisvol, c("sum"="larvae.tot", "cast"="station"))
+    
+    
+    
+# select the station we want
+abund.m3 <- abund.m3[-which(abund.m3$station %in% c("station_19", "station_20")),]
+
+
+# RBIND ISIIS AND PLANKTON NET SAMPLES
+fishab <- rbind(isiisvol, ab) 
+    
+p <- ggplot() + 
+#	geom_raster(aes(fill=-z, x=x, y=y), data=bathyDF) + 
+	geom_contour(aes(z=-z, x=x, y=y), colour="gray80", data=bathyDF, size=0.3) + 
 	geom_polygon(fill="gray25", data=coast, aes(x=lon, y=lat)) +
     geom_point(aes(x=lon, y=lat, size=abund.norm, colour=data), data=fishab) +
     scale_x_continuous("Longitude", expand=c(0,0)) + 
 	scale_y_continuous("Latitude", expand=c(0,0)) +
+    scale_size("Relative abundance", range=c(1,10))+#, breaks = c(1, 5, 10)) +
+	coord_quickmap(xlim=c(6.9, 8.05), ylim=c(43.24, 43.75)) +
+	theme_bw() #+ opts
+
+pdf("isiis-nets-comp.pdf", width=9 ,height=6)
+p
+dev.off()
+
+
+
+
+
+# !!!!!!!!!!!! 
+# ADD A PLOT WITH THE 2 ABUNDANCES OF PLANKTON NETS CALCULATED (M3 and VOL)
+
+
+
+
+
 
 
 
@@ -1310,6 +1386,9 @@ ggplot() +
 	scale_x_continuous("Latitude") +
 	scale_y_continuous("Longitude") +
 	coord_map(xlim=c(7.1,8.1), ylim=c(43.2,43.75))
+
+dev.off()		
+
 
 
 
