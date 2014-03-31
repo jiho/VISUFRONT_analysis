@@ -49,17 +49,21 @@ ggplot(dm) + geom_point(aes(x=dateTimeMsec, y=value), size=1, alpha=0.1, na.rm=T
 
 # read TS record, which contains GPS location
 ts <- read.csv("ts.csv", stringsAsFactors=FALSE)
-ts$dateTime <- as.POSIXct(ts$dateTime)
+ts$dateTime <- as.POSIXct(ts$dateTime, tz="GMT") # we are not in GMT but this is added to get rid of an error with the join later
 # round ISIIS time to the second, to match with the ship's GPS
 d$dateTime <- round(d$dateTimeMsec)
 # get lat-lon from the TS record
+
+# TODO: error here "Error in as.POSIXct.POSIXlt(what, tz = tzone) : invalid 'tz' value"
+# Robin? Any ideas to fix this?
+d$dateTime <- as.POSIXct(d$dateTime, tz="GMT")
 d <- join(d, ts[,c("dateTime", "lat", "lon")], by="dateTime")
 
 # interpolate GPS data
 sum(is.na(d$lat))
 sum(is.na(d$lon))
-d$lat <- approx(x=as.numeric(d$dateTimeMsec), y=d$lat, xo=as.numeric(d$dateTimeMsec))$y
-d$lon <- approx(x=as.numeric(d$dateTimeMsec), y=d$lon, xo=as.numeric(d$dateTimeMsec))$y
+d$lat <- approx(x=as.numeric(d$dateTimeMsec), y=d$lat, xo=as.numeric(d$dateTimeMsec))$y # another error here "Error in xy.coords(x, y) : 'x' and 'y' lengths differ"
+d$lon <- approx(x=as.numeric(d$dateTimeMsec), y=d$lon, xo=as.numeric(d$dateTimeMsec))$y # error "Error in xy.coords(x, y) : 'x' and 'y' lengths differ"
 sum(is.na(d$lat))
 sum(is.na(d$lon))
 
