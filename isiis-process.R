@@ -15,8 +15,11 @@ library("reshape2")
 
 source("lib_process.R")
 
+# dropbox location. change for every user
+dropboxloc <- "/Users/jessicaluo/Dropbox/"
+
 # get data
-hydroFiles <- list.files("ISIIShydro", pattern=glob2rx("ISIIS*.txt"), full=T)
+hydroFiles <- list.files(paste(dropboxloc, "visufront-data/ISIIShydro", sep=""), pattern=glob2rx("ISIIS*.txt"), full=T)
 d <- adply(hydroFiles, 1, function(file) {
 	read.isiis(file)
 }, .progress="text")
