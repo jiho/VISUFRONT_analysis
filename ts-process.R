@@ -6,7 +6,10 @@
 #
 #------------------------------------------------------------
 
-message("Read and process TS record")
+# IF NOT IN THE .RPROFILE, SET USER FIRST 
+#user <- "faillettaz"
+
+message("Read and process ISIIS hydrological record")
 
 library("plyr")
 library("stringr")
@@ -15,8 +18,8 @@ library("reshape2")
 
 source("lib_process.R")
 
-# drop box location. change for every user
-dropboxloc <- "/Users/jessicaluo/Dropbox/"
+# dropbox location. change for every user
+dropboxloc <- str_c("/Users/", user, "/Dropbox/visufront-data/")
 
 # get all files
 tsFiles <- list.files(paste(dropboxloc, "visufront-data/TS", sep=""), pattern="*.tethys", full=TRUE)
@@ -54,7 +57,7 @@ ggplot(tsm) + geom_point(aes(x=dateTime, y=value), size=1.5, alpha=0.1, na.rm=T)
 write.csv(ts, file="ts.csv", row.names=FALSE)
 
 # read transects limits
-transects <- read.csv("transects.csv", na.strings=c("", "NA"), colClasses=c("character", "POSIXct", "POSIXct"))
+transects <- read.csv("transects.csv", na.strings=c("", "NA"), colClasses=c("character", "POSIXct", "POSIXct"), sep=";")
 
 pdf("ts-transects.pdf")
 d_ply(transects, ~name, function(x, data) {
