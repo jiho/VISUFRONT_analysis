@@ -15,8 +15,11 @@ library("reshape2")
 
 source("lib_process.R")
 
+# drop box location. change for every user
+dropboxloc <- "/Users/jessicaluo/Dropbox/"
+
 # get all files
-tsFiles <- list.files("TS", pattern="*.tethys", full=TRUE)
+tsFiles <- list.files(paste(dropboxloc, "visufront-data/TS", sep=""), pattern="*.tethys", full=TRUE)
 ts <- adply(tsFiles, 1, function(file) {
   read.ts(file)
 }, .progress="text")
