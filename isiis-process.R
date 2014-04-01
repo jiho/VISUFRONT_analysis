@@ -6,6 +6,9 @@
 #
 #------------------------------------------------------------
 
+# IF NOT IN THE .RPROFILE, SET USER FIRST 
+#user <- "faillettaz"
+
 message("Read and process ISIIS hydrological record")
 
 library("plyr")
@@ -16,10 +19,10 @@ library("reshape2")
 source("lib_process.R")
 
 # dropbox location. change for every user
-dropboxloc <- "/Users/jessicaluo/Dropbox/"
+dropboxloc <- str_c("/Users/", user, "/Dropbox/visufront-data/")
 
 # get data
-hydroFiles <- list.files(paste(dropboxloc, "visufront-data/ISIIShydro", sep=""), pattern=glob2rx("ISIIS*.txt"), full=T)
+hydroFiles <- list.files(paste(dropboxloc, "ISIIShydro", sep=""), pattern=glob2rx("ISIIS*.txt"), full=T)
 d <- adply(hydroFiles, 1, function(file) {
 	read.isiis(file)
 }, .progress="text")
@@ -48,7 +51,7 @@ ggplot(dm) + geom_point(aes(x=dateTimeMsec, y=value), size=1, alpha=0.1, na.rm=T
 ##{ Add location data -----------------------------------------------------
 
 # read TS record, which contains GPS location
-ts <- read.csv("ts.csv", stringsAsFactors=FALSE)
+ts <- read.csv(str_c(dropboxloc, "TS/ts.csv"), stringsAsFactors=FALSE)
 ts$dateTime <- as.POSIXct(ts$dateTime, tz="GMT") # we are not in GMT but this is added to get rid of an error with the join later
 # round ISIIS time to the second, to match with the ship's GPS
 d$dateTime <- round(d$dateTimeMsec)
@@ -80,7 +83,7 @@ isiis <- d
 write.csv(isiis, file="isiis.csv", row.names=FALSE)
 
 # read transects limits
-transects <- read.csv("transects.csv", na.strings=c("", "NA"), colClasses=c("character", "POSIXct", "POSIXct"))
+transects <- read.csv("transects.csv", na.strings=c("", "NA"), colClasses=c("character", "POSIXct", "POSIXct"), sep=";")
 
 pdf("isiis-transects.pdf")
 d_ply(transects, ~name, function(x, data) {
