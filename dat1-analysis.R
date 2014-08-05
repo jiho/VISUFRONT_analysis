@@ -104,43 +104,40 @@ if (length(pids[which(pids$Valid == 'not_found'), "Valid"] > 0)) {
 }
 
 
-# Merge SIPHOS
-pids[which(pids$Valid %in% c("sipho_tail", "sipho_round")), "Valid"] <- "sipho"
-unique(pids$Valid)
 
+# Merge groups into large taxonomical groups
+# --------------------------------------------------------------------
 
-# Merge EPHYRAE
-pids[which(pids$Valid %in% c("ephyrae_side")), "Valid"] <- "ephyrae"
-sort(unique(pids$Valid))
-
-
-# Merge polychaetes
-pids[which(pids$Valid %in% c("polychaets")), "Valid"] <- "polychaetes"
-sort(unique(pids$Valid))
-
-
-# Merge shrimps
-pids[which(pids$Valid %in% c("shrimp_large")), "Valid"] <- "shrimps"
-sort(unique(pids$Valid))
-
-# change radiolarians names
-pids[which(pids$Valid %in% c("radiolarians")), "Valid"] <- "radiolarian_sol"
-sort(unique(pids$Valid))
-pids[which(pids$Valid %in% c("radiolarian_col_rings")), "Valid"] <- "radiolarian_rings"
-sort(unique(pids$Valid))
-pids[which(pids$Valid %in% c("radiolarian_colony")), "Valid"] <- "radiolarian_col"
-sort(unique(pids$Valid))
-pids[which(pids$Valid %in% c("radiolarians_dark")), "Valid"] <- "radiolarian_dark"
-sort(unique(pids$Valid))
-
-
-
-# Merge groups
+    
+    
 pids$groups <- pids$Valid 
-# change radiolarians names
+
+# Merge appendicularians
+pids[which(str_detect(pids$Valid, "append") == T), "groups"] <- "appendicularians"
+
+# merge radiolarians names
 pids[which(str_detect(pids$Valid, "radiolarian") == T), "groups"] <- "radiolarians"
+
+# merge fish_like
 pids[which(str_detect(pids$Valid, "fish") == T), "groups"] <- "fish_like"
-pids[which(pids$Valid %in% c("crust_larvae", "crustaceans", "copepods")), "groups"] <- "small_crustaceans"
+
+# Merde crustaceans
+pids[which(str_detect(pids$Valid, "crust") == T), "groups"] <- "crustaceans"
+
+# Merde jellyfishes
+pids[which(str_detect(pids$Valid, "jelly") == T | pids$Valid %in% "ephyrae"), "groups"] <- "jellyfishes"
+
+# Merde pteropods
+pids[which(str_detect(pids$Valid, "pterop") == T), "groups"] <- "pteropods"
+
+# Merde aggregates
+pids[which(str_detect(pids$Valid, "det") == T), "groups"] <- "detritus"
+
+# Merde siphonophores
+pids[which(str_detect(pids$Valid, "siphos") == T), "groups"] <- "siphonophores"
+
+# Merde others
+pids[which(pids$Valid %in% c("bad_focus", "duplicates", "unidentified", "unidentified_of_interest")), "groups"] <- "others"
 
 sort(unique(pids$groups))
 
