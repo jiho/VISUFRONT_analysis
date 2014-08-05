@@ -205,11 +205,12 @@ facet_grid(.~Valid, scales="free_x")
  }
 
 
-#--------------------------------------------
-#       Get sampled volumn per bin
-#--------------------------------------------
-
-vol <- adply(datfiles, 1, function(x) {
+#---------------------------------------------------------------------
+#       COMPUTE VOLUME SAMPLED PER DEPTH BIN
+#---------------------------------------------------------------------
+ {
+     
+vol <- adply(datfiles[14:15], 1, function(x) {
     # read datfiles
     t <- read.table(x, sep="\t", h=F)
 
@@ -231,12 +232,13 @@ vol <- adply(datfiles, 1, function(x) {
     #vol <- v[!duplicated(v[, c("DepthBin", "nb")]), c("DepthBin", "nb")]
 
     img$vol.m3 <- img$nb * 7.78 / 1000
-    img$cast <- as.numeric(str_split_fixed(x, fixed("_"), 4)[, 3]) * 2 -1
+    img$cast <- 54 - (as.numeric(str_split_fixed(x, fixed("_"), 4)[, 3]) * 2 -1) 
+    # 55 - should be removed when processing other transects
     
     
     return(img)
     
-    }, .progress="text")
+}, .progress="text")
     vol <- vol[, -1]
     
 head(vol)
@@ -437,6 +439,20 @@ any(is.na(bioFull))
 # NB : Bio data need to be localised in x, y, z --> I will bin the depth by profile
 # and get the corresponding x and y
 
+
+
+
+# !!!!!!!!!!!!!!!!!!  NEED TO BE FIXED !!!!!!!!!!!!!!!!!!!!!!
+# cast are inverted for dat1 files and physical files 
+
+
+
+
+
+
+
+
+
 # select only physical data from the profil 05 (cast 9)
 biophy <- ddply(bioFull, ~cast, function(x) {
     
@@ -544,6 +560,20 @@ head(biophy)
 # try w/ 1 variable only
 sal <- di2[which(di2$variable == "Salinity.PPT"), ]
 
+
+# Melt biophy plot plots
+biophyM <- melt(biophy, id.vars = c("DepthBin", "cast", "dateTimeMsec", "Pressure.dbar", "Depth.m", "Temp.celsius", "Fluoro.volts", "Oxygen.ml.l", "Irrandiance.UE.cm", "Salinity.PPT", "Density", "dateTime", "lat", "lon", "distanceFromStart", "distanceFromVlfr",   "distanceFromShore", "down.up"), variable.name = "taxa", value.name = "abund.m3")
+head(biophyM)
+tail(biophyM)
+
+# change NA value of abundance, due to absence of data on the grid, to 0 since it's absences 
+biophyM[which(is.na(biophyM$abund.m3)), ]
+dim(which(is.na(biophyM$abund.m3)))
+biophyM$abund.m3[which(is.na(biophyM$abund.m3))] <- 0
+
+
+# plot fish larvae
+data <- biophyM[which(biophyM$taxa == "fish_larvae"), ]
 ggplot() + 
 geom_raster(aes(x=distance, y=-Depth.m, fill=value), data= sal , na.rm=T, ) +
 stat_contour(aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE, data=sal) +
