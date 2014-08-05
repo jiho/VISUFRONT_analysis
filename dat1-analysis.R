@@ -724,370 +724,587 @@ fluo <- iS[which(iS$variable == "Fluoro.volts"), ]
 temp <- iS[which(iS$variable == "Temp.celsius"), ]
 oxy <- iS[which(iS$variable == "Oxygen.ml.l"), ]
 
+# load pca data to plot
+load("pca-physics.RData")
+
+
 # RADIOLARIANS
-
-taxa1 <- c("radiolarian_sol", "radiolarian_dark", "radiolarian_col")
-
-b <- biophyplot[ , names(biophyplot) %in% c(taxa1, "DepthBin", "cast", "distanceFromVlfr")]
-b <- melt(b, id.vars = c("DepthBin", "cast", "distanceFromVlfr"))
-
-
-data <- b[which(b$variable == "radiolarian_dark"), ]
-p_rd <- ggplot() +
+# --------------------------------------------------------------------
+ {
+     
+data <- biophyM[which(biophyM$taxa == "radiolarians_solitarian_dark"), ]
+p_rd_val <- ggplot() +
     geom_raster(data=fluo, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
     stat_contour(data=fluo, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
     scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
     #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size(expression(paste("radiolarian m"^"-3")), limits = c(1, max(data$value)), range = c(1, 12))+
+    scale_size(expression(paste("radiolarians dark m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
     scale_x_continuous("", expand=c(0,0)) +
     scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
     opts
 
-data <- b[which(b$variable == "radiolarian_sol"), ]
-p_rs <- ggplot() +
-    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
+
+data <- biophyM[which(biophyM$taxa == "radiolarians_solitarian_other"), ]
+p_rs_val <- ggplot() +
+    geom_raster(data=fluo, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=fluo, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
     scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
     #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size(bquote(.(paste("rad_solit") ~ "m"^"-3")), limits = c(1, max(data$value)), range = c(1, 12))+
-    scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
+    scale_size(expression(paste("radiolarians sol m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+    
+
+data <- biophyM[which(biophyM$taxa == "radiolarians_acantharia"), ]
+p_aca_val <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("acantharians m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
     scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
     opts
 
-data <- b[which(b$variable == "radiolarian_col"), ]
-p_rc <- ggplot() +
-    geom_raster(data=fluo, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-    stat_contour(data=fluo, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
+
+data <- biophyM[which(biophyM$taxa == "radiolarians_colony"), ]
+p_rc_val <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
     scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
     #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size(bquote(.(paste(data$variable)) ~ "m"^"-3"), limits = c(1, max(data$value)), range = c(1, 12))+
+    scale_size(expression(paste("radiolarians col m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
     scale_x_continuous("", expand=c(0,0)) +
-    scale_y_continuous("Depth (m)", limits = c(-103, 5), expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
     opts
-
-pdf("rads_fluo_sal.pdf", height = 10, width=9)
-grid.arrange(p2, p3, p1, ncol=1)
+    
+pdf("plot/rads_validated.pdf", height = 15, width=10)
+grid.arrange(p_rd_val, p_rs_val, p_aca_val, p_rc_val, ncol=1)
 dev.off()
 
 
-
-pdf("rads_fluo.pdf", height = 15, width=10)
-plots <- dlply(b, ~variable, function(x) {
-        ggplot() +
-        geom_raster(data=fluo, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-        stat_contour(data=fluo, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-        geom_point(data=x, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
-        scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
-        #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-        scale_size(bquote(.(paste(x$variable)) ~ "m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-        scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
-        scale_y_continuous("Depth (m)", limits = c(-103, 5), expand=c(0,0)) +
-        opts
-        })
-
-do.call(grid.arrange, c(plots,list(ncol=1)))
-dev.off()
-dev.off()
+ }
 
 
+# JELLYFISHES
+# --------------------------------------------------------------------
+ {
 
-# FOR OTHER GROUPS
-
-taxa2 <- c("appendicularians", "copepods", "ctenophores", "doliolids", "ephyrae", "jellyfish", "pteropods", "sipho")
-
-b <- biophyplot[ , names(biophyplot) %in% c(taxa2, "DepthBin", "cast", "distanceFromVlfr")]
-b <- melt(b, id.vars = c("DepthBin", "cast", "distanceFromVlfr"))
-
-# rename appendicularians
-b$variable <- as.character(b$variable)
-b[which(b$variable == "appendicularians"), "variable"] <- "appendicul"
-
-
-pdf("distrib-otherThanFish.pdf", height = 12, width=15)
-plots <- dlply(b, ~variable, function(x) {
-        ggplot() +
-        geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-        stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-        geom_point(data=x, aes(x=distanceFromVlfr, y=-DepthBin, size=value, group=cast))+
-        scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
-        #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-        scale_size(bquote(.(paste(x$variable)) ~ "m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-        scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
-        scale_y_continuous("Depth (m)", limits= c(-103, 8), expand=c(0,0))
-        })
-
-do.call(grid.arrange, c(plots,list(ncol=2, nrow=4)))
-dev.off()
-
-
-
-data <- b[which(b$variable == "copepods"), ]
-p_cop <- ggplot() +
-    geom_raster(data=fluo, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-    stat_contour(data=fluo, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value)) +
+data <- biophyM[which(biophyM$taxa == "jelly_arctapod"), ]
+p_jarc <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
     scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
     #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size(bquote(.(paste(data$variable)) ~ "m"^"-3"), limits = c(1, max(data$value)), range = c(1, 12))+
-    scale_x_continuous("Distance from shore (m)", expand=c(0,0)) +
+    scale_size(expression(paste("Arctap m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
     scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
     opts
 
-data <- b[which(b$variable == "pteropods"), ]
-p_pt <- ggplot() +
+
+# data <- biophyM[which(biophyM$taxa == "jelly_solmis"), ]
+# p_jsol <- ggplot() +
+#     geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+#     stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
+#     geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+#     scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+#     #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+#     scale_size(expression(paste("Solmis m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+#     scale_x_continuous("", expand=c(0,0)) +
+#     scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+#     opts
+
+
+data <- biophyM[which(biophyM$taxa == "jelly_other"), ]
+p_joth <- ggplot() +
     geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
     stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
-    scale_fill_gradientn(bquote(.(paste(temp$variable))), colours=spectral(), na.value=NA) +
-    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size(bquote(.(paste(data$variable)) ~ "m"^"-3"), limits = c(1, max(data$value)), range = c(1, 12))+
-    scale_x_continuous("", expand=c(0,0)) +
-    scale_y_continuous("Depth (m)", limits = c(-103, 7), expand=c(0,0)) +
-opts
-
-data <- b[which(b$variable == "doliolids"), ]
-head(data)
-sum(data[which(data$DepthBin > 60), "value"])
-data <- data[which(data$DepthBin < 60), ]
-
-p_do <- ggplot() +
-    geom_raster(data=temp, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-    stat_contour(data=temp, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) + 
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
-    scale_fill_gradientn(bquote(.(paste(temp$variable))), colours=spectral(), guide="none", na.value=NA) +
-    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size_area(bquote(.(paste(data$variable)) ~ "m"^"-3"), max_size = 12) +
-    scale_x_continuous("", expand=c(0,0)) +
-    scale_y_continuous("", limits = c(-103, 8), expand=c(0,0)) +
-opts
-
-data <- b[which(b$variable == "sipho"), ]
-p_si <- ggplot() +
-    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
     scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
     #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size(bquote(.(paste("siphonop")) ~ "m"^"-3"), limits = c(1, max(data$value)), range = c(1, 12))+
+    scale_size(expression(paste("Others m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
     scale_x_continuous("", expand=c(0,0)) +
     scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
-opts
+    opts
 
-
-data <- b[which(b$variable == "jellyfish"), ]
-p_je <- ggplot() +
-    geom_raster(data=temp, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-    stat_contour(data=temp, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) + 
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
-    scale_fill_gradientn(bquote(.(paste(temp$variable))), guide="none", colours=spectral(), na.value=NA) +
-    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size(bquote(.(paste(data$variable)) ~ "m"^"-3"), limits = c(1, max(data$value)), range = c(1, 12))+
-    scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
-    scale_y_continuous("", limits = c(-103, 8), expand=c(0,0)) +
-opts
-
-data <- b[which(b$variable == "ephyrae"), ]
-p_ep <- ggplot() +
-    geom_raster(data=temp, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-    stat_contour(data=temp, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) + 
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
-    scale_fill_gradientn(bquote(.(paste(temp$variable))), colours=spectral(), na.value=NA) +
-    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size(bquote(.(paste(data$variable)) ~ "m"^"-3"), limits = c(1, max(data$value)), range = c(1, 12))+
-    scale_x_continuous("", expand=c(0,0)) +
-    scale_y_continuous("Depth (m)", limits = c(-103, 8), expand=c(0,0)) +
-opts
-
-data <- b[which(b$variable == "appendicul"), ]
-p_ap <- ggplot() +
-    geom_raster(data=fluo, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-    stat_contour(data=fluo, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
-    scale_fill_gradientn(bquote(.(paste(fluo$variable))), colours=spectral(), na.value=NA) +    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size(bquote(.(paste(data$variable)) ~ "m"^"-3"), limits = c(1, max(data$value)), range = c(1, 12))+
-    scale_x_continuous("", expand=c(0,0)) +
-    scale_y_continuous("Depth (m)", limits = c(-103, 8), expand=c(0,0)) +
-opts
-
-data <- b[which(b$variable == "ctenophores"), ]
-p_ct <- ggplot() +
-    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
+p_joth_pca <- ggplot() +
+    geom_raster(data=pca, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=pca, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
     scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
     #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size(bquote(.(paste(data$variable)) ~ "m"^"-3"), limits = c(1, max(data$value)), range = c(1, 12))+
-    scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
-    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
-opts
-
-
-
-# fluo plot (copepods, appendicularians, radiolarians)
-pdf("rads_cop_app_fluo.pdf", height = 10, width=9)
-grid.arrange(p_rd, p_ap, p_cop, ncol=1)
-dev.off()
-# rm(p_rd, p_ap, p_cop)
-
-# temp jellyfish, ephyrae, doliolids
-pdf("do_eph_jel_temp.pdf", height = 10, width=9)
-grid.arrange(p_do, p_ep, p_je, ncol=1)
-dev.off()
-# rm(p_do, p_ep, p_je)
-
-# sal
-pdf("radsol_sip_pte_sal.pdf", height = 10, width=9)
-grid.arrange(p_si, p_pt, p_rs, ncol=1)
-dev.off()
-# rm(p_si, p_pt, p_rs)
-
-
-
-# FISH LIKE AND SIMILAR
-
-taxa3 <- c("appendicularians", "fish_like", "chaetognaths", "fish")
-
-b <- biophyplot[ , names(biophyplot) %in% c(taxa3, "DepthBin", "cast", "distanceFromVlfr")]
-b <- melt(b, id.vars = c("DepthBin", "cast", "distanceFromVlfr"))
-
-# rename appendicularians
-b$variable <- as.character(b$variable)
-b[which(b$variable == "appendicularians"), "variable"] <- "append"
-b[which(b$variable == "chaetognaths"), "variable"] <- "chaeto"
-b[which(b$variable == "fish"), "variable"] <- "fish larvae"
-b[which(b$variable == "fish_like"), "variable"] <- "fish like"
-
-
-
-
-pdf("append-chaeto-fishlike.pdf", height = 15, width=10)
-plots <- dlply(b, ~variable, function(x) {
-        ggplot() +
-        geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-        stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-        geom_point(data=x, aes(x=distanceFromVlfr, y=-DepthBin, size=value, group=cast))+
-        scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
-        #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-        scale_size(bquote(.(paste(x$variable)) ~ "m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-        scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
-        scale_y_continuous("Depth (m)", limits= c(-103, 8), expand=c(0,0))
-        })
-
-do.call(grid.arrange, c(plots,list(ncol=1)))
-dev.off()
-
-
-data <- b[which(b$variable == "fish larvae"), ]
-p1 <- ggplot() +
-    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
-    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
-    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size(bquote(.(paste(data$variable)) ~ "m"^"-3"), limits = c(1, max(data$value)), range = c(1, 12))+
+    scale_size(expression(paste("Others m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
     scale_x_continuous("", expand=c(0,0)) +
     scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
-opts
+    opts
 
 
-data <- b[which(b$variable == "chaeto"), ]
-p2 <- ggplot() +
+data <- biophyM[which(biophyM$taxa == "ephyrae"), ]
+p_eph <- ggplot() +
     geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
     scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
     #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size(bquote(.(paste(data$variable)) ~ "m"^"-3"), limits = c(1, max(data$value)), range = c(1, 12))+
+    scale_size(expression(paste("Ephyrae m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
     scale_x_continuous("", expand=c(0,0)) +
-    scale_y_continuous("Depth (m)", limits = c(-103, 5), expand=c(0,0)) +
-opts
-
-
-data <- b[which(b$variable == "append"), ]
-p3 <- ggplot() +
-    geom_raster(data=fluo, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-    stat_contour(data=fluo, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
-    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
-    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size(bquote(.(paste("appendicul")) ~ "m"^"-3"), limits = c(1, max(data$value)), range = c(1, 12))+
-    scale_x_continuous("", expand=c(0,0)) +
-    scale_y_continuous("Depth(m)", limits = c(-103, 5), expand=c(0,0)) +
-opts
-
-
-data <- b[which(b$variable == "fish like"), ]
-p4 <- ggplot() +
-    geom_raster(data=fluo, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-    stat_contour(data=fluo, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=value))+
-    scale_fill_gradientn(bquote(.(paste(fluo$variable))), colours=spectral(), na.value=NA) +    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-    scale_size(bquote(.(paste(data$variable)) ~ "m"^"-3"), limits = c(1, max(data$value)), range = c(1, 12))+
-    scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
     scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
-opts
+    opts
 
 
-pdf("fish-likes.pdf", height = 13, width=9)
-grid.arrange(p1, p2, p3, p4, ncol=1)
+pdf("jellies_sal_validated.pdf", height = 15, width=10)
+grid.arrange(p_jarc, p_eph, p_joth, p_jsol, ncol=1)
 dev.off()
 
-
-# Fish_like + append
-
-pdf("append_fish-likes.pdf", height = 8, width=9)
-grid.arrange(p3, p4, ncol=1)
+pdf("jellies_other_pca_validated.pdf", height = 9, width=10)
+grid.arrange(p_joth, p_joth_pca, ncol=1)
 dev.off()
-# rm(p3, p4)
+
+ }
 
 
-# FISH LARVAE
+# OTHER GELATINOUS
+# --------------------------------------------------------------------
  
-taxa4 <- c("fish")
+ {
 
-b <- biophyplot[ , names(biophyplot) %in% c(taxa4, "DepthBin", "cast", "distanceFromVlfr")]
-b <- melt(b, id.vars = c("DepthBin", "cast", "distanceFromVlfr"))
+data <- biophyM[which(biophyM$taxa == "doliolids"), ]
+p_dol_val <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Doliolids m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
 
-# rename appendicularians
-b$variable <- as.character(b$variable)
-b[which(b$variable == "fish"), "variable"] <- "fish larvae"
+
+
+p_dol_val_log <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=log(abund.m3+1)))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Doliolids m"^"-3")), limits = c(1, max(log(data$abund.m3+1))), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+
+
+pdf("doliolids_val_sal.pdf", height = 9, width=10)
+grid.arrange(p_dol_val, p_dol_val_log, ncol=1)
+dev.off()
+
+
+
+# SIPHONOPHORES
+# --------------------------------------------------------------------
+
+data <- biophyM[which(str_detect(biophyM$taxa,  "siphos") == T), ]
+
+p_sipho <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Calycophores m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+
+
+p_sipho_log <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=log(abund.m3+1)))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Calycophores m"^"-3")), limits = c(1, max(log(data$abund.m3+1))), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+
+
+pdf("sipho_log_sal.pdf", height = 9, width=10)
+grid.arrange(p_sipho, p_sipho_log, ncol=1)
+dev.off()
 
 
 
 
-pdf("fish-larvae.pdf", height = 4, width=9)
-plots <- dlply(b, ~variable, function(x) {
-        ggplot() +
-        geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
-        stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-        geom_point(data=x, aes(x=distanceFromVlfr, y=-DepthBin, size=value, group=cast))+
-        scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
-        #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
-        scale_size_area(bquote(.(paste(x$variable)) ~ "m"^"-3"), limits = c(1, max(x$value)), max_size = 12)+
-        scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
-        scale_y_continuous("Depth (m)", limits= c(-103, 8), expand=c(0,0))
-        })
+# Ctenophores
+# --------------------------------------------------------------------
 
-do.call(grid.arrange, c(plots,list(ncol=1)))
+
+data <- biophyM[which(biophyM$taxa == "cteno_mertens"), ]
+
+p_cteno <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Ctenophores m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+pdf("cteno_sal.pdf", height = 6, width=10)
+grid.arrange(p_cteno, ncol=1)
+dev.off()
+
+
+
+# APPENDICULARIANS
+# --------------------------------------------------------------------
+
+data <- biophyM[which(biophyM$taxa == "append_oikop"), ]
+p_oikop <- ggplot() +
+    geom_raster(data=fluo, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=fluo, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Oikop m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+
+
+data <- biophyM[which(biophyM$taxa == "append_fritill"), ]
+p_frit <- ggplot() +
+    geom_raster(data=fluo, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=fluo, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("fritill m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+
+
+pdf("append_fluo.pdf", height = 9, width=10)
+grid.arrange(p_oikop, p_frit, ncol=1)
+dev.off()
+
+
+ }
+
+
+# CRUSTACEANS
+# --------------------------------------------------------------------
+
+  {
+
+# COPEPODS
+# --------------------------------------------------------------------
+
+  
+
+data <- biophyM[which(biophyM$taxa == "crust_copepods"), ]
+p_cop_val <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Copepods m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+
+data <- biophyM[which(biophyM$taxa == "crust_copepods_calanus"), ]
+p_calanus <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Calanus m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+
+data <- biophyM[which(biophyM$taxa == "crust_copepods_euchaeta"), ]
+p_euch <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("euchaeta m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+
+data <- biophyM[which(biophyM$taxa == "crust_copepods_other"), ]
+p_copOth <- ggplot() +
+    geom_raster(data=fluo, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=fluo, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Others m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+
+pdf("cop.pdf", height = 15, width=10)
+grid.arrange(p_cop, p_calanus, p_euch, p_copOth, ncol=1)
 dev.off()
 
 
 
 
 
+# CUSTACEANS OTHERS
+# --------------------------------------------------------------------
 
-#---------------------------------------------
-#          Get physical data for BRT
-#---------------------------------------------
+data <- biophyM[which(biophyM$taxa == "crust_amphipods"), ]
+p_amph <- ggplot() +
+    geom_raster(data=temp, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=temp, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Amphipods m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+    
+    
+data <- biophyM[which(biophyM$taxa == "crust_larvae"), ]
+p_larv <- ggplot() +
+    geom_raster(data=pca, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=pca, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Crust larv m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
 
-# Create the grid for interp surface
-xy <- biophy[, c("distanceFromVlfr", "Depth.m")]
 
-# Interp physical data per bin
-biophy$sal <- interp.surface(smooth, xy)
+
+data <- biophyM[which(biophyM$taxa == "polychaetes"), ]
+p_poly <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Polychaetes m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+pdf("others.pdf", height = 12, width=10)
+grid.arrange(p_amph, p_larv, p_poly, ncol=1)
+dev.off()
+
+
+  }
+
+
+# OTHER GROUPS
+# --------------------------------------------------------------------
+
+ {
+
+# Chaetognaths
+# --------------------------------------------------------------------
+
+
+data <- biophyM[which(biophyM$taxa == "chaetognaths"), ]
+p_chaeto <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Chaetognaths m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+pdf("chaeto_sal.pdf", height = 6, width=10)
+grid.arrange(p_chaeto, ncol=1)
+dev.off()
+
+
+
+# Shrimps
+# --------------------------------------------------------------------
+
+data <- biophyM[which(biophyM$taxa == "shrimps"), ]
+p_shrimps <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Shrimps m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+pdf("shrimps_sal.pdf", height = 6, width=10)
+grid.arrange(p_shrimps, ncol=1)
+dev.off()
+
+
+# PTEROPODS
+# --------------------------------------------------------------------
+
+
+data <- biophyM[which(biophyM$taxa == "pteropods_cavol"), ]
+p_cavol <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Cavolina m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+data <- biophyM[which(biophyM$taxa == "pteropods_creseis"), ]
+p_cres <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Creseis m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+
+data <- biophyM[which(biophyM$taxa == "pteropods_other"), ]
+p_pteOth <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Other m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+
+pdf("pte_sal.pdf", height = 12, width=10)
+grid.arrange(p_cavol, p_cres, p_pteOth, ncol=1)
+dev.off()
+
+
+
+# PHYTO
+# --------------------------------------------------------------------
+
+data <- biophyM[which(biophyM$taxa == "phyto_diatom_chains"), ]
+p_diat <- ggplot() +
+    geom_raster(data=fluo, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=fluo, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Diatoms chains m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+    
+    
+data <- biophyM[which(biophyM$taxa == "phyto_trichod"), ]
+p_trich<- ggplot() +
+    geom_raster(data=fluo, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=fluo, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Trichodesm m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+    
+
+pdf("phyto_fluo.pdf", height = 9, width=10)
+grid.arrange(p_diat, p_trich, ncol=1)
+dev.off()
+
+
+ }    
+
+    
+# FISH AND FISH-LIKE
+# --------------------------------------------------------------------
+
+ {
+    
+data <- biophyM[which(biophyM$taxa == "fish_larvae"), ]
+p_fish<- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Fish larvae m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+    
+data <- biophyM[which(biophyM$taxa == "fish_like_high_conf"), ]
+p_fish_hc <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Fish-hConf m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+    
+    
+data <- biophyM[which(biophyM$taxa == "fish_like"), ]
+p_fishlike <- ggplot() +
+    geom_raster(data=sal, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+    stat_contour(data=sal, aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.8, bins=5, size=0.4, na.rm=TRUE) +
+    geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3))+
+    scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+    #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+    scale_size(expression(paste("Fish-like m"^"-3")), limits = c(1, max(data$abund.m3)), range = c(1, 12))+
+    scale_x_continuous("", expand=c(0,0)) +
+    scale_y_continuous("", limits = c(-103, 5), expand=c(0,0)) +
+    opts
+
+
+pdf("fish_sal_all.pdf", height = 12, width=10)
+grid.arrange(p_fish, p_fish_hc, p_fishlike, ncol=1)
+dev.off()
 
 
  }
