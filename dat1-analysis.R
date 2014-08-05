@@ -1,24 +1,25 @@
-# -----------------------------------------------------------
+#################################################################################
 #
-# Process ISIIS data for the Ocean Science Meeting 2014
-# Robin Faillettaz, 2014-02-14
+#       PROJECT VISUFRONT - Read validated ISIIS data and plot them
 #
-# -----------------------------------------------------------
+#            Created by Robin Faillettaz on date 13/07/2014
+#     UPMC - Laboratoire d'Océanograhie de Villefranche-sur-Mer (LOV)       
 #
-# Working on transect cross - front 04
-# It's a night transect
-# Profil validated : 01, 03, 05, 09, 13, 17, 25
-#
+#################################################################################
+
+# Notes
+ 
 # A .Rprofile file should be set personnaly to the directory where the data are stored (dropbox)
+# for CC5, casts are inverted (01 is offshore and 54 is ashore) and have to be reverted with nbCast+1 - castNb
+
+
+
 
 # For now locate data from the dropbox repo manually
 dir <- "/Users/faillettaz/Dropbox/visufront-data/"
 
-# set options for ploting
-opts <- theme(axis.title.y= element_text(angle=90, vjust=0.5, size=18), axis.title.x= element_text(angle=0, vjust=0.5, size=18)) + 
-theme(axis.text.x  = element_text(angle=0, vjust=0.5, size=15), axis.text.y  = element_text(angle=0, vjust=0.5, size=15))
 
-
+# Load libraries
 library("plyr")
 library("ggplot2")
 library("stringr")
@@ -35,13 +36,31 @@ source("lib_plot_rf.R")
 source("lib_process.R")
 
 
-files <- list.files(str_c(dir, "zooprocess/"), full = T)
-#pid <- read.pid(files[2])
+# set options for ploting
+opts <- theme(axis.title.y= element_text(angle=90, vjust=0.5, size=18), axis.title.x= element_text(angle=0, vjust=0.5, size=18)) + 
+theme(axis.text.x  = element_text(angle=0, vjust=0.5, size=15), axis.text.y  = element_text(angle=0, vjust=0.5, size=15))
 
-dat1 <- files[which(str_detect(files, "_dat1.txt") == T)]
+
+
+# --------------------------------------------------------------------
+#       READ ZOOPROCESS FILES
+# --------------------------------------------------------------------
+ {
+
+
+# list files
+files <- list.files(str_c(dir, "zooprocess/"), full = T)
+
+
+# Select dat1 files
+# dat1 <- files[which(str_detect(files, "_dat1.txt") == T)] # For all files
+dat1 <- files[which(str_detect(files, "byR_dat1.txt") == T)] # for certain files only
+
+# select datfiles
 datfiles <- files[which(str_detect(files, "_datfile.txt") == T)]
 
 
+# read selected dat1 files 
 pids <- adply(dat1, 1, function(x) {
 
 pid <- read.pid(x)
@@ -63,29 +82,16 @@ names(pid) <- names
 return(pid)
 
 }, .progress="text")  
-
-
 pids <- pids[, -1]
 
 
-
-# # check for NAs
-# length(which(is.na(pids)))
-# 
-# # delete them if any
-# if (dim(pids[which(is.na(pids)), ])[1] > 0) {
-#    pids <- pids[-which(is.na(pids)), ] 
-# }
-
-# !!!!!! NA check isn't correct
+ }
 
 
-
-
-
-#--------------------------------------------
+# --------------------------------------------------------------------
 #       CLEAN NAMES AND MERGE GROUPS
-#--------------------------------------------
+# --------------------------------------------------------------------
+ {
 
 
 # Check "not_found" category
@@ -93,6 +99,7 @@ pids[which(pids$Valid == 'not_found'), ]
 
 # correspond to images lost during sorting, get rid of them
 if (length(pids[which(pids$Valid == 'not_found'), "Valid"] > 0)) {
+    message("Removing lost images (not found)")
     pids <- pids[-which(pids$Valid == 'not_found'), ]
 }
 
@@ -138,11 +145,13 @@ pids[which(pids$Valid %in% c("crust_larvae", "crustaceans", "copepods")), "group
 sort(unique(pids$groups))
 
 
+ }
 
 
-#--------------------------------------------
+#---------------------------------------------------------------------
 #       EXTRACT BIOLOGICAL INFO
-#--------------------------------------------
+#---------------------------------------------------------------------
+ {
 
 
 # set depth BIN 
@@ -154,35 +163,21 @@ bio <- ddply(pids, ~Valid+Label+DepthBin, function(x) {
     sum(na.omit(x$Valid==paste(x$Valid)))
     })
 bio <- rename(bio, c("V1" = "Abund"))
+head(bio)
 
 # check for NAs
-bio[which(is.na(bio$Valid)), ]
-
 if (dim(bio[which(is.na(bio)), ])[1] > 0) {
+    message("Removing NAs")
     bio <- bio[-which(is.na(bio)), ]
-}
+    }
 
-
-
-
-# BIO GROUPS
-# get raw abundance
-bioG <- ddply(pids, ~groups+Label+DepthBin, function(x) {
-    sum(na.omit(x$groups==paste(x$groups)))
-    })
-bioG <- rename(bioG, c("V1" = "Abund"))
-
-# check for NAs
-if (dim(bioG[which(is.na(bioG)), ])[1] > 0) {
-    bioG <- bioG[-which(is.na(bioG)), ]
-}
-
+head(bio)
 
 
 
 # join with depth bin to have a line for each depth
 # Set all possibilities of depth, valid and label and add corresponding abundances
-grid <- expand.grid(unique(bio$Valid), unique(bio$Label), unique(bio$DepthBin))
+grid <- expand.grid(sort(unique(bio$Valid)), sort(unique(bio$Label)), sort(unique(bio$DepthBin)))
 head(grid)
 names(grid) <- c("Valid", "Label", "DepthBin")
 
@@ -196,20 +191,21 @@ length(which(is.na(bioFull)))  # if 0 --> OK
 
 
 # get number of a certain group
-sum(bioFull[which(bioFull$Valid == "aggregates"), "Abund"])
+sum(bioFull[which(bioFull$Valid == "det_aggregates"), "Abund"])
 
 
 # get cast number from the profil name (vignette label)
-bioFull$cast <- as.numeric(str_split_fixed(bioFull$Label, fixed("_"), 3)[, 3]) * 2 - 1
+bioFull$cast <- 54 - (as.numeric(str_split_fixed(bioFull$Label, fixed("_"), 3)[, 3]) * 2 - 1)
 
 
 # plot everything
-ggplot(bioFull[which(bioFull$Valid %in% c("fish", "fish_like", "chaetognaths", "sipho")), ]) + 
-geom_point(aes(x = Abund, y = -DepthBin, colour = Label)) + 
-geom_path(aes(x = Abund, y = -DepthBin, colour = Label)) + 
+ggplot(bioFull[which(bioFull$Valid %in% c("fish_larvae", "fish_like", "chaetognaths", "siphos_calycophore")), ]) + 
+geom_point(aes(x = Abund, y = -DepthBin, colour = Label, group = Label)) + 
+#geom_path(aes(x = Abund, y = -DepthBin, colour = Label)) + 
 facet_grid(.~Valid, scales="free_x")
 
 
+ }
 
 
 #--------------------------------------------
@@ -249,12 +245,14 @@ vol <- adply(datfiles, 1, function(x) {
 head(vol)
 length(which(is.na(vol$vol.m3)))  # if 0 --> OK
 
+ }
 
 
-#--------------------------------------------
-#       Merge volumns with abundance
-#--------------------------------------------
-
+#---------------------------------------------------------------------
+#       COMPUTE ABUNDANCES (VOLUMES)
+#---------------------------------------------------------------------
+ {
+ 
 head(bioFull)
 head(vol)
 bioFull <- join(bioFull, vol)
@@ -265,16 +263,21 @@ bioFull$abund.m3 <- bioFull$Abund / bioFull$vol.m3
 length(which(is.na(bioFull$nb.img)))  # if 0 --> OK
 
 if (dim(bioFull[which(is.na(bioFull$abund.m3)), ])[1] > 0) {
+    message("removing NAs")
     bioFull <- bioFull[-which(is.na(bioFull$nb.img)), ]   # Only some column work, weird. It seems to be from the vol object after joining
 }
 
-
-#---------------------------------------------------------
-#         Process Physical Data
-#---------------------------------------------------------
+ }
+ 
+ 
+#---------------------------------------------------------------------
+#       READ PHYSICAL DATA
+#---------------------------------------------------------------------
+ {
+ 
 
 # Read physical data from transect 4
-phy <- read.csv(str_c(dir, "ISIIShydro/transects/cross_current_4//isiis.csv"), header=T, sep=",")
+phy <- read.csv(str_c(dir, "ISIIShydro/transects/cross_current_5/isiis.csv"), header=T, sep=",")
 head(phy)
 # delete first line (data from previous transect)
 phy <- phy[-1, ]
@@ -283,19 +286,19 @@ phy <- phy[-1, ]
 phy <- rename(phy, c("Temp.C" = "Temp.celsius"))
 
 # select only data from upcasts --> Keep first down cast below 25m to improve interpolation
-d <- phy[which(phy$down.up %in% "up" | phy$down.up %in% "down" & phy$Depth.m > 28), ]
+data <- phy[which(phy$down.up %in% "up" | phy$down.up %in% "down" & phy$Depth.m > 28), ]
 
 
 # check if seems ok
-ggplot(d, aes(x=distanceFromVlfr, y=-Depth.m, colour=Salinity.PPT))  + geom_point() # Yes !
+ggplot(data, aes(x=distanceFromVlfr, y=-Depth.m, colour=Salinity.PPT))  + geom_point() # Yes !
+
+ }
 
 
-
-
-#-----------------------------------
-#        GLIDER DATA
-#-----------------------------------
-
+#---------------------------------------------------------------------
+#        GLIDER DATA ---- BROKEN ------
+#---------------------------------------------------------------------
+ {
 # # Add glider data that to complete the profile
 # g <- read.csv("~/Desktop/PhD/VISUFRONT/ISIIS/glider/glier-d25.csv", sep=",", header=T)
 # head(g)
@@ -349,15 +352,17 @@ ggplot(d, aes(x=distanceFromVlfr, y=-Depth.m, colour=Salinity.PPT))  + geom_poin
 # 
 # do.call(grid.arrange, c(plots,list(ncol=1)))
 
+ }
 
+#---------------------------------------------------------------------
+#        PROCESS PHYSICAL DATA IF NO GLIDER DATA 
+#---------------------------------------------------------------------
+ {
 
-#-----------------------------------
-#        IF NO GLIDER DATA 
-#-----------------------------------
 
 # compute interpolation 
 # interpolate all variables
-dm <- melt(d, id.vars=c("Depth.m", "distanceFromVlfr"), measure.vars=c("Salinity.PPT", "Temp.celsius", "Fluoro.volts", "Oxygen.ml.l"))
+dm <- melt(data, id.vars=c("Depth.m", "distanceFromVlfr"), measure.vars=c("Salinity.PPT", "Temp.celsius", "Fluoro.volts", "Oxygen.ml.l"))
 
 
 
@@ -390,12 +395,9 @@ do.call(grid.arrange, c(plots,list(ncol=1)))
 # if updates in the lib_plot
 #source("data/lib_plot.R")
 
-# delete NAs from the previous interpolation
-i2 <- di
-
 
 # Second interpolation for all variables
-di2 <- ddply(i2, ~variable, function(x) {
+di2 <- ddply(di, ~variable, function(x) {
     x <- na.omit(x)
     xi <- interp.smooth(x=x$distance, y=x$Depth.m, z=x$value, x.step = 0.1, y.step = 0.1)
 }, .progress="text")
@@ -417,20 +419,22 @@ plots <- dlply(di2, ~variable, function(x) {
 do.call(grid.arrange, c(plots,list(ncol=1)))
 
 
+ }
 
 
-#--------------------------------------------------
-#           Merge physical and biological
-#--------------------------------------------------
-
-
+# --------------------------------------------------------------------
+#       MERGE PHYSICAL AND BIOLOGICAL DATA
+# --------------------------------------------------------------------
+ 
+# Merge interpolated physical and biological data
+# -------------------------------------------------------------------- 
+ {
 
 # NB : Bio data need to be localised in x, y, z --> I will bin the depth by profile
 # and get the corresponding x and y
 
-
 head(bioFull)
-which(is.na(bioFull))
+any(is.na(bioFull))
 
 
 # NB : Bio data need to be localised in x, y, z --> I will bin the depth by profile
@@ -439,7 +443,7 @@ which(is.na(bioFull))
 # select only physical data from the profil 05 (cast 9)
 biophy <- ddply(bioFull, ~cast, function(x) {
     
-#    x <- bioFull[which(bioFull$cast == 49), ]
+    # x <- bioFull[which(bioFull$cast == 1), ]
     
     phyx <- phy[which(phy$cast == unique(x$cast)), ]
     
@@ -453,19 +457,11 @@ biophy <- ddply(bioFull, ~cast, function(x) {
     
     
     
-    
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # ADD A DCAST FOR RAW ABUND AND NOT ONLY ABUND.M3
     
     
-    
-    
-    
-    
-    
-    
-    
-    
+
     
     
     
@@ -541,8 +537,10 @@ dim(biophy[which(is.na(biophy$Salinity.PPT)), ])
 
 # remove NAs
 if (dim(biophy[which(is.na(biophy$Salinity.PPT)), ])[1] > 0) {
-    biophy <- which(is.na(biophy[-which(is.na(biophy$Salinity.PPT)), ]))   # other columns are <NA> so not recognized as NAs
+    message("Removing NAs")
+    biophy <- biophy[-which(is.na(biophy$Salinity.PPT)), ]   # other columns are <NA> so not recognized as NAs
 }
+
 head(biophy)
 
 
@@ -553,22 +551,23 @@ ggplot() +
 geom_raster(aes(x=distance, y=-Depth.m, fill=value), data= sal , na.rm=T, ) +
 stat_contour(aes(x=distance, y=-Depth.m, z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE, data=sal) +
 #geom_path(aes(x=distanceFromVlfr, y=-Depth.m, group=cast), size=0.6, data=phy) +
-geom_point(data=biophy[-which(biophy$fish==0), ], aes(x=distanceFromVlfr, y=-DepthBin, size=fish, group=cast))+
+geom_point(data=data, aes(x=distanceFromVlfr, y=-DepthBin, size=abund.m3, group=cast))+
 scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
 scale_x_continuous(expand=c(0,0)) +
-scale_y_continuous(expand=c(0,0))
+scale_y_continuous(expand=c(0,0)) +
+scale_size_area()
 
-# IT WORKS, GREAT. 
+# IT WORKS, GREAT, but physical data should be extrapolated on the sides
 
+ }
 
-
-#------------------------------------------------------
-#         Get physical data from distribution 
-#------------------------------------------------------
-
+# Smooth and extrapolate physical data
+# --------------------------------------------------------------------
+ {
+     
 # Here, we use image.smooth that does the extrapolation on the left of the plot and make it nicer
-head(biophy)
 
+head(biophy)
 
 # interpolate like above for each variable
 i <- dlply(di, ~variable, function(x) {
@@ -607,26 +606,39 @@ iS <- ldply(i, function(x) {
 head(iS)
 unique(iS$variable)
 
+# save data for next time
+#save(is, file = "physics.Rdata")
+
+ }
+
 
 # plot it 
-pdf("CTD.pdf", height = 15, width=10)
-plots <- dlply(iS, ~variable, function(x) {
-        ggplot(x, aes(x=distance, y=Depth.m)) +
-        #geom_point(aes(fill=value), shape=21, colour=NA, na.rm=T) +
-        geom_raster(aes(fill=value, na.rm=T))+
-        stat_contour(aes(z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
-        scale_fill_gradientn(paste(x$variable), colours=spectral(), na.value=NA) +
-        scale_x_continuous("Distance from shore", expand=c(0,0)) +
-        scale_y_reverse("Depth (m)", expand=c(0,0)) +
-        opts
-        })
+# --------------------------------------------------------------------
+
+ {
+
+# short way but axis labels repeated
 
 
-do.call(grid.arrange, c(plots,list(ncol=1)))
-dev.off()
+# pdf("CTD.pdf", height = 15, width=10)
+# plots <- dlply(iS, ~variable, function(x)
+#         {
+#         ggplot(x, aes(x=distance, y=Depth.m)) +
+#         #geom_point(aes(fill=value), shape=21, colour=NA, na.rm=T) +
+#         geom_raster(aes(fill=value, na.rm=T))+
+#         stat_contour(aes(z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
+#         scale_fill_gradientn(paste(x$variable), colours=spectral(), na.value=NA) +
+#         scale_x_continuous("Distance from shore", expand=c(0,0)) +
+#         scale_y_reverse("Depth (m)", expand=c(0,0)) +
+#         opts
+#         })
+#
+#
+# do.call(grid.arrange, c(plots,list(ncol=1)))
+# dev.off()
 
 
-
+# longer but better way
 data <- iS[which(iS$variable == "Salinity.PPT"), ]
 p1 <- ggplot(data, aes(x=distance, y=Depth.m)) +
         geom_raster(aes(fill=value, na.rm=T))+
@@ -667,7 +679,8 @@ pdf("ctd-clean.pdf", height = 13, width=9)
 grid.arrange(p1, p2, p3, p4, ncol=1)
 dev.off()
 
-dev.off()
+
+ }
 
 
 #------------------------------------------------------
@@ -677,7 +690,7 @@ dev.off()
 
 # select variables
 colnames(biophy)
-biophyplot <- biophy[, c(1, 2, 4, 6:11, 13:16, 18:20, 23, 25:32, 47, 49)]
+biophyplot <- biophy# [, c(1, 2, 4, 6:11, 13:16, 18:20, 23, 25:33, 47, 49, 93, 91)]
 
 sal <- iS[which(iS$variable == "Salinity.PPT"), ]
 fluo <- iS[which(iS$variable == "Fluoro.volts"), ]
@@ -1049,14 +1062,15 @@ xy <- biophy[, c("distanceFromVlfr", "Depth.m")]
 # Interp physical data per bin
 biophy$sal <- interp.surface(smooth, xy)
 
-# Check if seems fine
-biophy[, c("sal", 'Salinity.PPT', 'Depth.m')]
 
+ }
 
 
 #---------------------------------------------
-#           Plot ship trajectory 
+#           PLOT SHIP TRAJECTORY 
 #---------------------------------------------
+ {
+
 
 # YO-YOs
 
@@ -1065,7 +1079,7 @@ biophy[, c("sal", 'Salinity.PPT', 'Depth.m')]
 updw <- phy
 
 # select the processed casts
-processed <- c(1, 5, 9, 17, 25, 33, 49)
+processed <- c(2, 7, 9, 17, 25, 33, 49)
 updw[which(updw$cast %in% processed), "Done"] <- "Processed"
 updw[which(is.na(updw$Done)), "Done"] <-  "To be processed"
 
@@ -1142,13 +1156,13 @@ ggplot(mapping=aes(x=lon, y=lat)) + geom_contour(aes(z=-z, x=x, y=y), colour="gr
 
 
 
-
+ }
 
 
 #---------------------------------------------------------
 #          COMPUTE ABUNDANCE PER VOL PLKT NETS
 #---------------------------------------------------------
-
+ {
 
 # Read abundance at stations
 fl_nets <- read.csv(str_c(dir, "/nets/visufront-fish-larvae.csv"), sep=";", h=T)
@@ -1257,8 +1271,14 @@ abund.m3$abund.m3.norm <- abund.m3$abund.m3 / max(abund.m3$abund.m3)
 abund.m3$data <- "Plankton nets"
 
 
-# Compare ISIIS and plankton nets abundances
-#-----------------------------------------------
+ }
+
+
+
+# --------------------------------------------------------------------
+#       COMPARE ISIIS AND PLANKTON NETS ABUNDANCES
+# --------------------------------------------------------------------
+ {
 
 # get abundance from ISIIS data
 lf_isiis <- biophy[, names(biophy) %in% c("fish", "lat", "lon", "cast")]
@@ -1390,8 +1410,7 @@ ggplot() +
 dev.off()		
 
 
-
-
+ }
 
 
 
