@@ -22,11 +22,14 @@ library("akima")
 library("fields")
 library("oce")   
 library("FactoMineR")
+library("reshape")
 
 
 source("lib_zooprocess.R")
 source("lib_plot.R")
+source("lib_plot_rf.R")
 source("lib_process.R")
+source("plot-pca.R")
 
 
 
@@ -86,12 +89,13 @@ do.call(grid.arrange, c(plots,list(ncol=1)))
 #       COMPUTE SPATIAL PCA ON PHYSICAL DATA
 #-------------------------------------------------------------
 
+d <- dcast(di, Depth.m + distance ~ variable, value.var = "value")
+
 
 #   First for raw data 
 #-----------------------------
 
 # Prepare data to compute PCA 
-d <- dcast(di, Depth.m + distance ~ variable, value.var = "value")
 ACP <- na.exclude(d)
 ACP <- ACP[order(ACP$distance),]
 
@@ -132,6 +136,8 @@ dN <- na.exclude(ddply(d[which(d$distance < 28), ], ~distance, function(x){
 #   Check if ok 
 #----------------------------
 dM <- melt(dN, id.vars = c("depth", "distance"))
+
+
 plots <- dlply(dM, ~variable, function(x) {
         ggplot(x, aes(x=distance, y=depth)) +
         #geom_point(aes(fill=value), shape=21, colour=NA, na.rm=T) +
@@ -147,6 +153,48 @@ do.call(grid.arrange, c(plots,list(ncol=1)))
 # it's working
 
 
+
+
+
+# Second interpolation over a finer grid for ploting
+#----------------------------------------------------
+
+# if updates in the lib_plot
+#source("data/lib_plot.R")
+
+# delete NAs from the previous interpolation
+i2 <- dM
+
+
+# Second interpolation for all variables
+di2 <- ddply(i2, ~variable, function(x) {
+    x <- na.omit(x)
+    xi <- interp.smooth(x=x$distance, y=x$depth, z=x$value, x.step = 0.1, y.step = 0.1)
+}, .progress="text")
+
+
+di2 <- rename(di2, c("x"="distance", "y"="Depth.m"))
+
+plots <- dlply(di2, ~variable, function(x) {
+        ggplot(x, aes(x=distance, y=Depth.m)) +
+        #geom_point(aes(fill=value), shape=21, colour=NA, na.rm=T) +
+        geom_raster(aes(fill=value, na.rm=T))+
+        stat_contour(aes(z=value), colour="white", alpha=0.7, bins=5, size=0.2, na.rm=TRUE) +
+        scale_fill_gradientn(paste(x$variable), colours=spectral(), na.value=NA) +
+        scale_x_continuous("Distance from shore", expand=c(0,0)) +
+        scale_y_reverse("Depth (m)", expand=c(0,0)) +
+        opts
+        })
+
+pdf("ctd-anomalies.pdf", height = 12, width=9)
+do.call(grid.arrange, c(plots,list(ncol=1)))
+dev.off()
+
+
+
+
+
+
 # compute the PCA with variables anomalies
 pca <- dN[order(dN$distance),]
 res <- PCA(X=pca[,-c(1,2)], graph=F)
@@ -160,7 +208,7 @@ pca$position[which(is.na(pca$position))] <- "frontal"
 
 
 # call the acp_plot function to plot the pca
-plot_acp(x = res, colour = pca$position)
+plot_pca(x = res, colour = pca$position)
 
 
 # save all different possibilites
@@ -192,7 +240,7 @@ do.call(grid.arrange, c(plots,list(ncol=2)))
 #-----------------------------------------------------------
 
 
-#   For axis 1 only
+# For axis 1 only
 #-----------------------------
 
 # create a new df and interpolate smooth from it
@@ -204,8 +252,54 @@ di2 <- rename(di2, c("x"="distance", "y"="Depth.m"))
 ggplot(di2, aes(x=distance, y=Depth.m)) + geom_raster(aes(fill=value, na.rm=T)) + stat_contour(aes(z=value), colour="white", bins=5, na.rm=TRUE) + scale_fill_gradientn("PCA1", colours=spectral(), na.value=NA) + scale_x_continuous("Distance from shore", expand=c(0,0)) + scale_y_reverse("Depth (m)", expand=c(0,0)) +
 opts
 
-#    
-# ------------------
+
+
 # Not too bad, the front is (even more) easy to visualize and appears more vertical than when working on salinity data only.
 # Should be tested on other transects.
 
+
+
+#       Extrapolate for better plots
+# --------------------------------------------------------------------
+
+# Create the grid for the nex interpolation w/ extrapolation
+grid <- data.frame(x=seq(0, max(di2$distance), by=0.1), y=seq(0, max(di2$Depth.m), length=length(seq(0, max(di2$distance), by=0.1))))
+
+i <- rename(di2, c("distance" = "x", "Depth.m" = "y", "value" = "z"))
+
+source("~/r-utils/list-data_frame.R")
+i <- frame2list(i)
+
+
+    # run smoothing
+    smooth <- image.smooth(i, grid=grid, theta=0.28)
+    
+    # pass the list to df
+    out <- melt(smooth$z, varnames=c("x","y"))
+    out$x <- smooth$x[out$x]
+    out$y <- smooth$y[out$y]
+    iS <- rename(out, c("x"="distance", "y"="Depth.m"))
+
+
+head(iS)
+unique(iS$variable)
+
+save(iS, file = "pca-physics.RData")
+
+
+# Overlay larval fish abundance
+# --------------------------------------------------------------------
+
+load("fish_abond.Rdata")
+
+dlply(b, ~variable, function(x) {
+        ggplot() +
+        geom_raster(data=iS, aes(x=distance, y=-Depth.m, fill=value, na.rm=T))+
+        stat_contour(data=iS, aes(x=distance, y=-Depth.m, z=value), colour="white", bins=5, na.rm=TRUE) +
+        geom_point(data=b, aes(x=distanceFromVlfr, y=-DepthBin, size=value, group=cast))+
+        scale_fill_gradientn(colours=spectral(), guide="none", na.value=NA) +
+        #scale_size(bquote("Ind m"^"-3"), limits = c(1, max(x$value)), range = c(1, 12))+
+        scale_size_continuous(bquote(.(paste(b$variable)) ~ "m"^"-3"), limits = c(1, max(b$value)), range = c(1, 12))+#, max_size = 12)+
+        scale_x_continuous("Distance from shore (nm)", expand=c(0,0)) +
+        scale_y_continuous("Depth (m)", limits= c(-103, 8), expand=c(0,0))
+        })
