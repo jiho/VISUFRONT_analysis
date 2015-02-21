@@ -46,6 +46,7 @@ read.ts <- function(file) {
 # Read hydrological data from ISIIS
 read.isiis <- function(file) {
   library("stringr")
+  library("lubridate")
 
 	options(digits.secs=2)  # allow split seconds
 
@@ -65,7 +66,7 @@ read.isiis <- function(file) {
   day <- str_sub(file, -10, -9)
 
   # compute date and time
-  d$dateTimeMsec <- as.POSIXct(str_c(year, "-", month, "-", day, " ", d$Time))
+  d$dateTimeMsec <- ymd_hms(str_c(year, "-", month, "-", day, " ", d$Time))
   # detect midnight shifts
   midnightShift <- which(diff(d$dateTimeMsec) < 0)
   if (length(midnightShift) > 0) {
