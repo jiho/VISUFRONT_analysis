@@ -112,36 +112,34 @@ detect.casts <- function(depth, order=200) {
 # Compute the straight line distance from the starting point of a lat,lon trajectory
 dist.from.start <- function(lat, lon) {
 	library("oce")
-	geodDist(lat1=lat, lon1=lon, lat2=na.omit(lat)[1], lon2=na.omit(lon)[1]) / 1.852
+	geodDist(lon1=lon, lat1=lat, lon2=na.omit(lon)[1], lat2=na.omit(lat)[1])
 }
 
 # Compute the distance from Villefranche
 dist.from.villefranche <- function(lat, lon) {
 	# TODO should compensate for the length of cable put out and the angle of the cable (i.e. depth of ISIIS)
 	library("oce")
-	geodDist(lat, lon, lat2=43.70528, lon2=7.3118057) / 1.852
+	geodDist(lon1=lon, lat1=lat, lon2=7.3118057, lat2=43.70528)
 }
 
 # Compute the distance from shore, for the VISUFRONT cruise only
 dist.from.shore <- function(lat, lon) {
-	# find the most northern-western point
-	pointLat <- max(lat, na.rm=TRUE)
-	pointLon <- min(lon, na.rm=TRUE)
+	# find the most north-western point of the transect (the one closest to shore already)
+	base_point_lat <- max(lat, na.rm=TRUE)
+	base_point_lon <- min(lon, na.rm=TRUE)
 
-	# compute distance from shore for all points
-	coast <- read.csv("map/gshhg_coteazur_i.csv")
-
-	# find the closest point on the coast
+	# find the point on the coast closest to this point
 	# TODO should find the point of intersection between the coast and the axis of the transect
+	coast <- read.csv("map/gshhg_coteazur_i.csv")
 	library("oce")
-	dists <- geodDist(lat1=coast$lat, lon1=coast$lon, lat2=pointLat, lon2=pointLon)
+	dists <- geodDist(lon1=coast$lon, lat1=coast$lat, lon2=base_point_lon, lat2=base_point_lat)
 	minIdx <- which.min(dists)
-	refLat <- coast$lat[minIdx]
-	refLon <- coast$lon[minIdx]
+	ref_lat <- coast$lat[minIdx]
+	ref_lon <- coast$lon[minIdx]
 
 	# compute distances from this point to every point in the track
 	# TODO should compensate for the length of cable put out and the angle of the cable (i.e. depth of ISIIS)
-	dists <- geodDist(lat1=lat, lon1=lon, lat2=refLat, lon2=refLon) / 1.852
+	dists <- geodDist(lon1=lon, lat1=lat, lon2=ref_lon, lat2=ref_lat)
 
 	return(dists)
 }
