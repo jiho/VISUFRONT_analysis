@@ -4,29 +4,29 @@
 #  (c) Copyright 2013 Jean-Olivier Irisson
 #      GNU General Public License v3
 #
-#------------------------------------------------------------
+#--------------------------------------------------------------------------
 
-# IF NOT IN THE .RPROFILE, SET USER FIRST 
-#user <- "faillettaz"
+data <- "~/Dropbox/visufront-data/"
 
-message("Read and process ISIIS hydrological record")
-
-library("plyr")
+library("lubridate")
 library("stringr")
 library("ggplot2")
 library("reshape2")
+library("plyr")
+library("dplyr")
 
 source("lib_process.R")
 
-# dropbox location. change for every user
-dropboxloc <- str_c("/Users/", user, "/Dropbox/visufront-data/")
+
+##{ Read ISIIS hydro data --------------------------------------------------
 
 # get data
-hydroFiles <- list.files(paste(dropboxloc, "ISIIShydro", sep=""), pattern=glob2rx("ISIIS*.txt"), full=T)
-d <- adply(hydroFiles, 1, function(file) {
+hydroFiles <- list.files(str_c(data, "ISIIShydro"), pattern=glob2rx("ISIIS*.txt"), full=TRUE)
+d <- ldply(hydroFiles, function(file) {
 	read.isiis(file)
 }, .progress="text")
-d <- d[,-1]
+
+# }
 
 
 ##{ Cleanup data ----------------------------------------------------------
@@ -38,81 +38,80 @@ d$Fluoro.volts[d$Fluoro.volts <= 0.01] <- NA
 d$Oxygen.ml.l[d$Oxygen.ml.l <= 0] <- NA
 d$Oxygen.ml.l[d$Oxygen.ml.l >= 8] <- NA
 
-# check TS diagram
-ggplot(d) + geom_point(aes(x=Temp.C, y=Salinity.PPT), size=1, alpha=0.1, na.rm=T)
+# use salinity, temperature and pressure to compute seawater density using UNESCO formula
+d$Density <- swRho(d$Salinity.PPT, d$Temp.C, d$Pressure.dbar, eos="unesco")
 
-# check all variables
-dm <- melt(d, id.vars=c("dateTimeMsec", "Pressure.dbar", "Depth.m"))
-ggplot(dm) + geom_point(aes(x=dateTimeMsec, y=value), size=1, alpha=0.1, na.rm=T) + facet_wrap(~variable, scale="free_y")
+# # check TS diagram
+# ggplot(d) + geom_point(aes(x=Temp.C, y=Salinity.PPT), size=1, alpha=0.1, na.rm=T)
+#
+# # check all variables
+# dm <- melt(d, id.vars=c("dateTimeMsec", "Pressure.dbar", "Depth.m"))
+# ggplot(dm) + geom_point(aes(x=dateTimeMsec, y=value), size=1, alpha=0.1, na.rm=T) + facet_wrap(~variable, scale="free_y")
 
 # }
 
 
-##{ Add location data -----------------------------------------------------
+##{ Add lat/lon -----------------------------------------------------------
 
 # read TS record, which contains GPS location
-ts <- read.csv(str_c(dropboxloc, "TS/ts.csv"), stringsAsFactors=FALSE)
-ts$dateTime <- as.POSIXct(ts$dateTime, tz="GMT") # we are not in GMT but this is added to get rid of an error with the join later
-# round ISIIS time to the second, to match with the ship's GPS
-d$dateTime <- round(d$dateTimeMsec)
-# get lat-lon from the TS record
+ts <- read.csv(str_c(data, "TS/ts.csv"), stringsAsFactors=FALSE)
+ts$dateTime <- ymd_hms(ts$dateTime)
 
-# TODO: error here "Error in as.POSIXct.POSIXlt(what, tz = tzone) : invalid 'tz' value"
-# Robin? Any ideas to fix this?
-d$dateTime <- as.POSIXct(d$dateTime, tz="GMT")
-d <- join(d, ts[,c("dateTime", "lat", "lon")], by="dateTime")
+# round ISIIS time to the second, to match with the ship's GPS
+d$dateTime <- round_any(d$dateTimeMsec, 1)
+# NB: round turns this into a POSIXlt object
+
+# get lat-lon from the TS record
+d <- left_join(d, select(ts, dateTime, lat, lon), by="dateTime")
 
 # interpolate GPS data
 sum(is.na(d$lat))
 sum(is.na(d$lon))
-d$lat <- approx(x=as.numeric(d$dateTimeMsec), y=d$lat, xo=as.numeric(d$dateTimeMsec))$y # another error here "Error in xy.coords(x, y) : 'x' and 'y' lengths differ"
-d$lon <- approx(x=as.numeric(d$dateTimeMsec), y=d$lon, xo=as.numeric(d$dateTimeMsec))$y # error "Error in xy.coords(x, y) : 'x' and 'y' lengths differ"
+d$lat <- approx(x=as.numeric(d$dateTimeMsec), y=d$lat, xo=as.numeric(d$dateTimeMsec))$y
+d$lon <- approx(x=as.numeric(d$dateTimeMsec), y=d$lon, xo=as.numeric(d$dateTimeMsec))$y 
 sum(is.na(d$lat))
 sum(is.na(d$lon))
-
-# use salinity, temperature and pressure to compute seawater density using UNESCO formulation
-d$Density <- swRho(d$Salinity.PPT, d$Temp.C, d$Pressure.dbar, eos="unesco")
 
 # }
 
 
 ##{ Cut by transect -------------------------------------------------------
 
-# write the full record
-isiis <- d
-write.csv(isiis, file="isiis.csv", row.names=FALSE)
-
 # read transects limits
-transects <- read.csv("transects.csv", na.strings=c("", "NA"), colClasses=c("character", "POSIXct", "POSIXct"), sep=";")
+transects <- read.csv(str_c(data, "transects.csv"), na.strings=c("", "NA"))
+transects$dateTimeStart <- ymd_hms(transects$dateTimeStart)
+transects$dateTimeEnd <- ymd_hms(transects$dateTimeEnd)
 
 pdf("isiis-transects.pdf")
 d_ply(transects, ~name, function(x, data) {
 	message(x$name)
 
   # extract the appropriate portion of the data
-  cData <- data[which(data$dateTime > x$dateTimeStart-5 & data$dateTime < x$dateTimeEnd+5),]
+  cData <- filter(data, dateTime > x$dateTimeStart-5, data$dateTime < x$dateTimeEnd+5)
 
   if (nrow(cData) >= 1) {
     # compute distance from first point and from a reference point
-    cData$distanceFromStart <- dist.from.start(lat=cData$lat, lon=cData$lon)
-    cData$distanceFromVlfr <- dist.from.villefranche(lat=cData$lat, lon=cData$lon)
-    cData$distanceFromShore <- dist.from.shore(lat=cData$lat, lon=cData$lon)
+    cData$dist_from_start <- dist.from.start(lat=cData$lat, lon=cData$lon)
+    cData$dist_from_vlfr <- dist.from.villefranche(lat=cData$lat, lon=cData$lon)
+    cData$dist_from_shore <- dist.from.shore(lat=cData$lat, lon=cData$lon)
 
     # detect up and down casts
-		casts <- detect.casts(cData$Depth.m)
-		cData <- cbind(cData, casts)
+    casts <- detect.casts(cData$Depth.m)
+    cData <- cbind(cData, casts)
 
     # plot to check
-    print(ggplot(cData) + geom_point(aes(x=distanceFromShore, y=-Depth.m, colour=down.up), na.rm=T) + ggtitle(x$name))
+    print(ggplot(cData) + geom_point(aes(x=dist_from_shore, y=-Depth.m, colour=down.up), na.rm=T) + ggtitle(x$name))
 
     # store data file
     dir.create(str_c("transects/", x$name), showWarnings=FALSE, recursive=TRUE)
-    dataName <- deparse(substitute(data))
-    write.csv(cData, file=str_c("transects/", x$name, "/", dataName, ".csv"), row.names=FALSE)
+    write.csv(cData, file=str_c("transects/", x$name, "/isiis.csv"), row.names=FALSE)
   }
 
-	return(invisible(NULL))
-}, data=isiis)
+	return(invisible(cData))
+}, data=d)
 dev.off()
+
+# write the full record
+write.csv(d, file="isiis.csv", row.names=FALSE)
 
 # }
