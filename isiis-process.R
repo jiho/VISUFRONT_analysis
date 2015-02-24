@@ -106,9 +106,12 @@ isiis_in_transects <- ddply(transects, ~name, function(x, d) {
     # plot to check
     print(ggplot(df) + geom_point(aes(x=dist_from_shore, y=-Depth.m, colour=down.up), na.rm=T) + ggtitle(x$name))
 
-    # remove incorrect data: salinity above 30m in downcasts
+    # remove incorrect data
+    # salinity above 30m in downcasts
     df[which(df$down.up %in% "down" & df$Depth.m <= 30), c("Salinity.PPT", "Density")] <- NA
     # ggplot(df, aes(x=dist_from_start, y=-Depth.m, colour=Salinity.PPT))  + geom_point() + scale_color_spectral()
+    # and irradiance
+    df <- select(df, -Irrandiance.UE.cm)
 
     # store data file
     dir.create(str_c("transects/", x$name), showWarnings=FALSE, recursive=TRUE)
