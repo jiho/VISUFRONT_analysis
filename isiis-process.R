@@ -87,24 +87,23 @@ transects$dateTimeStart <- ymd_hms(transects$dateTimeStart)
 transects$dateTimeEnd <- ymd_hms(transects$dateTimeEnd)
 
 pdf("isiis-transects.pdf")
-isiis_in_transects <- ddply(transects, ~name, function(x, data) {
+isiis_in_transects <- ddply(transects, ~name, function(x, d) {
 	message(x$name)
 
   # extract the appropriate portion of the data
-  cData <- filter(data, dateTime > x$dateTimeStart-5, data$dateTime < x$dateTimeEnd+5)
+  df <- filter(d, dateTime > x$dateTimeStart-5, d$dateTime < x$dateTimeEnd+5)
 
-  if (nrow(cData) >= 1) {
+  if (nrow(df) >= 1) {
     # compute distance from first point and from a reference point
-    cData$dist_from_start <- dist.from.start(lat=cData$lat, lon=cData$lon)
-    cData$dist_from_vlfr <- dist.from.villefranche(lat=cData$lat, lon=cData$lon)
-    cData$dist_from_shore <- dist.from.shore(lat=cData$lat, lon=cData$lon)
+    df$dist_from_start <- dist.from.start(lat=df$lat, lon=df$lon)
+    df$dist_from_vlfr <- dist.from.villefranche(lat=df$lat, lon=df$lon)
+    df$dist_from_shore <- dist.from.shore(lat=df$lat, lon=df$lon)
 
     # detect up and down casts
-    casts <- detect.casts(cData$Depth.m)
-    cData <- cbind(cData, casts)
+    casts <- detect.casts(df$Depth.m)
+    df <- cbind(df, casts)
 
     # plot to check
-    print(ggplot(cData) + geom_point(aes(x=dist_from_shore, y=-Depth.m, colour=down.up), na.rm=T) + ggtitle(x$name))
 
     # remove incorrect data: above 30m in downcasts
     cData <- filter(cData, !(cData$down.up %in% "down" & cData$Depth.m <= 30))
@@ -112,12 +111,13 @@ isiis_in_transects <- ddply(transects, ~name, function(x, data) {
     # ggplot(eC, aes(x=distanceFromVlfr, y=-Depth.m, colour=Salinity.PPT))  + geom_point() + scale_colour_spectral()
 
     # store data file
+    print(ggplot(df) + geom_point(aes(x=dist_from_shore, y=-Depth.m, colour=down.up), na.rm=T) + ggtitle(x$name))
     dir.create(str_c("transects/", x$name), showWarnings=FALSE, recursive=TRUE)
-    write.csv(cData, file=str_c("transects/", x$name, "/isiis.csv"), row.names=FALSE)
+    write.csv(df, file=str_c("transects/", x$name, "/isiis.csv"), row.names=FALSE)
   }
 
-	return(cData)
-}, data=d)
+	return(df)
+}, d=d)
 dev.off()
 
 # write the full record
