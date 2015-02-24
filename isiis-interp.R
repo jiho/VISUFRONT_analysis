@@ -60,9 +60,10 @@ l_ply(isiisFiles, function(file) {
     xi <- rename(xi, Distance.km=x, Depth.m=y)
     return(xi)
   }
-  
-  # interpolation over a coarse grid
-  eiCoarse <- ddply(eCm, ~variable, my.interp.dist, duplicate="mean", x.step=1000, y.step=2, anisotropy=1200, smooth=TRUE, theta=0.5, .progress="text")
+
+
+  # interpolation across the transect
+  ei <- ddply(emm, ~variable, my.interp.dist, duplicate="mean", x.step=250, y.step=1, anisotropy=1200, smooth=FALSE, theta=0.5, .progress="text")
   # TODO try kriging
   
   # compute anomalies
@@ -74,40 +75,15 @@ l_ply(isiisFiles, function(file) {
   levels(eiAnom$variable) <- str_c(levels(eiAnom$variable), ".anomaly")
   eiCoarse <- rbind(eiCoarse, eiAnom)
 
-  plots <- dlply(eiCoarse, ~variable, function(Xi) {
     ggplot(mapping=aes(x=Distance.nm, y=-Depth.m, fill=value)) +
+  plots <- dlply(ei, ~variable, function(Xi) {
       geom_raster(data=Xi) +
       scale_fill_spectral() + labs(title=Xi$variable[1])
   })
-  pdf(str_c(dir, "/isiis_interp_coarse.pdf"), width=10, height=16)
+  pdf(str_c(dir, "/isiis_interp.pdf"), width=10, height=16)
   plots$ncol <- 2
   do.call(grid.arrange, plots)
   dev.off()
-  write.csv(dcast(eiCoarse, Distance.nm+Depth.m~variable, value.var="value"), file=str_c(dir, "/isiis_interp_coarse.csv"),  row.names=FALSE)
+  write.csv(dcast(ei, Distance.km+Depth.m~variable, value.var="value"), file=str_c(dir, "/isiis_interp.csv"),  row.names=FALSE)
 
-
-  # # interpolation over a fine grid
-  # eifine <- ddply(eCm, ~variable, my.interp.dist, duplicate="mean", x.step=250, y.step=0.5, anisotropy=1200, .progress="text")
-  # # TODO try kriging
-  # 
-  # # compute anomalies
-  # eiAnom <- ddply(eifine, ~variable+Depth.m, function(x) {
-  #   mean <- mean(x$value, na.rm=TRUE)
-  #   x$value <- x$value - mean
-  #   return(x)
-  # })
-  # levels(eiAnom$variable) <- str_c(levels(eiAnom$variable), ".anomaly")
-  # eifine <- rbind(eifine, eiAnom)
-  # 
-  # plots <- dlply(eifine, ~variable, function(Xi) {
-  #   ggplot(mapping=aes(x=Distance.nm, y=-Depth.m, fill=value)) +
-  #     geom_raster(data=Xi) +
-  #     scale_fill_spectral() + labs(title=Xi$variable[1])
-  # })
-  # pdf(str_c(dir, "/isiis_interp_fine.pdf"), width=10, height=16)
-  # plots$ncol <- 2
-  # do.call(grid.arrange, plots)
-  # dev.off()
-  # write.csv(dcast(eifine, Distance.nm+Depth.m~variable, value.var="value"), file=str_c(dir, "/isiis_interp_fine.csv"),  row.names=FALSE)
-  # 
 })
