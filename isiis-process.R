@@ -41,11 +41,15 @@ d$Oxygen.ml.l[d$Oxygen.ml.l >= 8] <- NA
 # use salinity, temperature and pressure to compute seawater density using UNESCO formula
 d$Density <- swRho(d$Salinity.PPT, d$Temp.C, d$Pressure.dbar, eos="unesco")
 
+# identify the role of variables
+vars <- c("Temp.C", "Salinity.PPT", "Fluoro.volts", "Oxygen.ml.l", "Irrandiance.UE.cm", "Density")
+id_vars <- c("dateTimeMsec", "Pressure.dbar", "Depth.m")
+
 # # check TS diagram
 # ggplot(d) + geom_point(aes(x=Temp.C, y=Salinity.PPT), size=1, alpha=0.1, na.rm=T)
 #
 # # check all variables
-# dm <- melt(d, id.vars=c("dateTimeMsec", "Pressure.dbar", "Depth.m"))
+# dm <- melt(d, id.vars=id_vars)
 # ggplot(dm) + geom_point(aes(x=dateTimeMsec, y=value), size=1, alpha=0.1, na.rm=T) + facet_wrap(~variable, scale="free_y")
 
 # }
