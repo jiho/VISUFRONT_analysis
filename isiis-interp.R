@@ -37,9 +37,9 @@ l_ply(isiisFiles, function(file) {
   
   # decide on which distance measure to use
   if ( str_detect(dir, "along") |  str_detect(dir, "lagrangian") ) {
-    distance <- "distanceFromStart"
+    distance <- "dist_from_start"
   } else {
-    distance <- "distanceFromShore"
+    distance <- "dist_from_shore"
   }
 
   # melt data to interpolate each variable sequentially
