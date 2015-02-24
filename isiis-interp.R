@@ -44,12 +44,15 @@ l_ply(isiisFiles, function(file) {
   }
 
   # melt data to interpolate each variable sequentially
-  eCm <- melt(eC, id.vars=c(distance, "Depth.m"), measure.vars=c("Salinity.PPT", "Temp.C", "Fluoro.volts", "Oxygen.ml.l", "Irrandiance.UE.cm", "Density"))
+  em <- melt(e, id.vars=c(distance, "Depth.m", "cast", "down.up"), measure.vars=c("Salinity.PPT", "Temp.C", "Fluoro.volts", "Oxygen.ml.l", "Density"))
   # interp does not like NAs
-  eCm <- na.omit(eCm)
+  em <- na.omit(em)
   # homogenise distance name
   names(em)[1] <- "Distance.km"
   
+  # bin over depth to avoid small scale variations which would throw off the interpolation
+  em$Depth.binned <- round_any(em$Depth.m, 0.5)
+  emm <- group_by(em, variable, cast, down.up, Depth.binned) %>% summarise_each(funs="mean")
   
   # pass the correct arguments to interp.dist
   my.interp.dist <- function(x, ...)  {
