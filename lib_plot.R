@@ -67,7 +67,8 @@ interp.dist <- function(x, y, z, anisotropy=1000, x.step=500, y.step=2.5, smooth
   library("reshape2")
 
   # correct x-axis for anisotropy between horizontal and vertical
-  x <- x / anisotropy
+  # and convert it to meters
+  x <- x * 1000 / anisotropy
 
   # interpolate
   i <- interp(x=x, y=y, z=z, xo=seq(0, max(x), by=x.step/anisotropy), yo=seq(0, max(y), by=y.step), ...)
@@ -80,7 +81,7 @@ interp.dist <- function(x, y, z, anisotropy=1000, x.step=500, y.step=2.5, smooth
 
   # extract a data.frame
   out <- melt(i$z, varnames=c("x","y"))
-  out$x <- i$x[out$x] * anisotropy
+  out$x <- i$x[out$x] * anisotropy / 1000 # back to km
   out$y <- i$y[out$y]
 
   return(out)
