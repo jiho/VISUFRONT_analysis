@@ -14,13 +14,12 @@
 # TODO - with a fine grid (and possibly extrapolation) for plots
 
 library("reshape2")
-library("ggplot2")
 library("plyr")
-library("grid")
 library("dplyr")
 library("stringr")
+library("ggplot2")
+library("grid")       # for plots on a grid
 library("gridExtra")
-library("scales")
 
 source("lib_plot.R")
 
@@ -71,8 +70,8 @@ l_ply(isiisFiles, function(file) {
   levels(ei_anom$variable) <- str_c(levels(ei_anom$variable), ".anomaly")
   ei <- rbind(ei, ei_anom)
 
-    ggplot(mapping=aes(x=Distance.nm, y=-Depth.m, fill=value)) +
   plots <- dlply(ei, ~variable, function(Xi) {
+    ggplot(mapping=aes(x=Distance.km, y=-Depth.m, fill=value)) +
       geom_raster(data=Xi) +
       scale_fill_spectral() + labs(title=Xi$variable[1])
   })
