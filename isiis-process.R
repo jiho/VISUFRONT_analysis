@@ -83,7 +83,7 @@ transects$dateTimeStart <- ymd_hms(transects$dateTimeStart)
 transects$dateTimeEnd <- ymd_hms(transects$dateTimeEnd)
 
 pdf("isiis-transects.pdf")
-d_ply(transects, ~name, function(x, data) {
+isiis_in_transects <- ddply(transects, ~name, function(x, data) {
 	message(x$name)
 
   # extract the appropriate portion of the data
@@ -107,11 +107,12 @@ d_ply(transects, ~name, function(x, data) {
     write.csv(cData, file=str_c("transects/", x$name, "/isiis.csv"), row.names=FALSE)
   }
 
-	return(invisible(cData))
+	return(cData)
 }, data=d)
 dev.off()
 
 # write the full record
 write.csv(d, file="isiis.csv", row.names=FALSE)
+write.csv(isiis_in_transects, file="isiis_in_transects.csv", row.names=FALSE)
 
 # }
