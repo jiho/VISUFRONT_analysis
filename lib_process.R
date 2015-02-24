@@ -8,6 +8,8 @@
 
 # Read thermosalinometer from Tethys
 read.ts <- function(file) {
+  library("lubridate")
+  
   # get column names from "notice_daufin-TS.pdf" page 12
   colNames <- c(
       "errorCode", "timeUTC", "lat", "lon", "PDOP", "nbSatellites", "sep",
@@ -26,7 +28,7 @@ read.ts <- function(file) {
   year <- str_sub(file, -15, -12)
   month <- str_sub(file, -11, -10)
   day <- str_sub(file, -9, -8)
-  midnight <- as.POSIXct(str_c(year, "-", month, "-", day, " 00:00:01"))
+  midnight <- ymd_hms(str_c(year, "-", month, "-", day, " 00:00:01"))
   d$dateTime <- midnight + d$timeUTC
   # convert into local time
   d$dateTime <- d$dateTime + 2*3600
