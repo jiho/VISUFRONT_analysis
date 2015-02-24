@@ -6,28 +6,27 @@
 #
 #------------------------------------------------------------
 
-# IF NOT IN THE .RPROFILE, SET USER FIRST 
-#user <- "faillettaz"
+data <- str_c("~/Dropbox/visufront-data/")
 
-message("Read and process ISIIS hydrological record")
 
-library("plyr")
-library("stringr")
 library("ggplot2")
 library("reshape2")
+library("lubridate")
+library("stringr")
+library("plyr")
+library("dplyr")
 
 source("lib_process.R")
 
-# dropbox location. change for every user
-dropboxloc <- str_c("/Users/", user, "/Dropbox/visufront-data/")
+##{ Read data --------------------------------------------------------------
 
 # get all files
-tsFiles <- list.files(paste(dropboxloc, "visufront-data/TS", sep=""), pattern="*.tethys", full=TRUE)
-ts <- adply(tsFiles, 1, function(file) {
+tsFiles <- list.files(paste(data, "TS", sep=""), pattern="*.tethys", full=TRUE)
+ts <- ldply(tsFiles, function(file) {
   read.ts(file)
 }, .progress="text")
-ts <- ts[,-1]
 
+# }
 
 ##{ Check the data --------------------------------------------------------
 
@@ -42,7 +41,7 @@ ggplot(ts) + gcoast + geom_point(aes(x=lon, y=lat, colour=-depth), size=1, alpha
 ts <- ts[-which(ts$salinity < 31),]
 
 # check T-S diagram
-ggplot(ts) + geom_point(aes(x=temperature, y=salinity), size=1.5, alpha=0.1, na.rm=T) + coord_map()
+ggplot(ts) + geom_point(aes(x=temperature, y=salinity), size=1.5, alpha=0.1, na.rm=T)
 
 # check time series of all variables
 tsm <- melt(ts, id.vars=c("dateTime", "lon", "lat"))
@@ -53,39 +52,44 @@ ggplot(tsm) + geom_point(aes(x=dateTime, y=value), size=1.5, alpha=0.1, na.rm=T)
 
 ##{ Cut by transect -------------------------------------------------------
 
-# write the complete record
-write.csv(ts, file="ts.csv", row.names=FALSE)
-
 # read transects limits
-transects <- read.csv("transects.csv", na.strings=c("", "NA"), colClasses=c("character", "POSIXct", "POSIXct"), sep=";")
+transects <- read.csv(str_c(data, "transects.csv"), na.strings=c("", "NA"))
+transects$dateTimeStart <- ymd_hms(transects$dateTimeStart)
+transects$dateTimeEnd <- ymd_hms(transects$dateTimeEnd)
+
+# add transect name to the file
+
 
 pdf("ts-transects.pdf")
-d_ply(transects, ~name, function(x, data) {
+ts_in_transect <- ddply(transects, ~name, function(x, data) {
 	message(x$name)
 
   # extract the appropriate portion of the data
-  cData <- data[which(data$dateTime > x$dateTimeStart-5 & data$dateTime < x$dateTimeEnd+5),]
+  cData <- filter(data, dateTime > x$dateTimeStart-5, data$dateTime < x$dateTimeEnd+5)
 
   if (nrow(cData) >= 1) {
     # compute distance from first point and from a reference point
-    cData$distanceFromStart <- dist.from.start(lat=cData$lat, lon=cData$lon)
-    cData$distanceFromVlfr <- dist.from.villefranche(lat=cData$lat, lon=cData$lon)
-    cData$distanceFromShore <- dist.from.shore(lat=cData$lat, lon=cData$lon)
+    cData$distance_from_start <- dist.from.start(lat=cData$lat, lon=cData$lon)
+    cData$distance_from_vlfr <- dist.from.villefranche(lat=cData$lat, lon=cData$lon)
+    cData$distance_from_shore <- dist.from.shore(lat=cData$lat, lon=cData$lon)
 
 	  # plot to check
-    print(ggplot(cData) + gcoast + geom_point(aes(x=lon, y=lat, colour=distanceFromShore), size=1, alpha=0.3, na.rm=T) + coord_map() + ggtitle(x$name))
+    print(ggplot(cData) + gcoast + geom_point(aes(x=lon, y=lat, colour=distance_from_shore), size=1, alpha=0.3, na.rm=T) + coord_map() + ggtitle(x$name))
 
     # store data file
     dir.create(str_c("transects/", x$name), showWarnings=FALSE, recursive=TRUE)
-    dataName <- deparse(substitute(data))
-    write.csv(cData, file=str_c("transects/", x$name, "/", dataName, ".csv"), row.names=FALSE)
+    write.csv(cData, file=str_c("transects/", x$name, "/ts.csv"), row.names=FALSE)
   }
 
-	return(invisible(NULL))
+	return(cData)
 }, data=ts)
 dev.off()
 
 # system("open ts-transects.pdf")
+
+# write the complete record
+write.csv(ts, file="ts.csv", row.names=FALSE)
+write.csv(ts_in_transect, file="ts_in_transect.csv", row.names=FALSE)
 
 # }
 
