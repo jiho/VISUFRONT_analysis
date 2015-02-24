@@ -41,11 +41,6 @@ l_ply(isiisFiles, function(file) {
   } else {
     distance <- "distanceFromShore"
   }
-  
-  # remove incorrect data: above 30m in downcasts
-  eC <- e[-which(e$down.up %in% "down" & e$Depth.m <= 30), ]
-  # ggplot(e, aes(x=distanceFromVlfr, y=-Depth.m, colour=down.up)) + geom_point()
-  # ggplot(eC, aes(x=distanceFromVlfr, y=-Depth.m, colour=Salinity.PPT))  + geom_point() + scale_colour_spectral()
 
   # melt data to interpolate each variable sequentially
   eCm <- melt(eC, id.vars=c(distance, "Depth.m"), measure.vars=c("Salinity.PPT", "Temp.C", "Fluoro.volts", "Oxygen.ml.l", "Irrandiance.UE.cm", "Density"))
