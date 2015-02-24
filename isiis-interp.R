@@ -17,6 +17,7 @@ library("reshape2")
 library("ggplot2")
 library("plyr")
 library("grid")
+library("dplyr")
 library("stringr")
 library("gridExtra")
 library("scales")
@@ -47,13 +48,13 @@ l_ply(isiisFiles, function(file) {
   # interp does not like NAs
   eCm <- na.omit(eCm)
   # homogenise distance name
-  names(eCm)[1] <- "Distance.nm"
+  names(em)[1] <- "Distance.km"
   
   
   # pass the correct arguments to interp.dist
   my.interp.dist <- function(x, ...)  {
-    xi <- interp.dist(x=x$Distance.nm, y=x$Depth.m, z=x$value, ...)
-    xi <- rename(xi, c("x"="Distance.nm", "y"="Depth.m"))
+    xi <- interp.dist(x=x$Distance.km, y=x$Depth.m, z=x$value, ...)
+    xi <- rename(xi, Distance.km=x, Depth.m=y)
     return(xi)
   }
   
