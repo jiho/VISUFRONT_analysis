@@ -37,45 +37,53 @@ pids$Valid <- str_replace(pids$Valid, "polychaets", "polychaetes")
 
 # compute abundance per depth bin
 bin <- 1
-pids$DepthBin <- round_any(pids$Depth, bin)
-bio <- ddply(pids, ~Valid+Label+DepthBin, nrow)
-bio <- rename(bio, c("V1" = "Abund"))
+pids$Depth_binned <- round_any(pids$Depth, bin)
+bio <- group_by(pids, Valid, Label, Depth_binned) %>% summarise(Abund=n())
 
 # add zeros when nothing was captured in a depth bin
 # compute all possibilities
-all <- expand.grid(Valid=unique(bio$Valid), Label=unique(bio$Label), DepthBin=unique(bio$DepthBin))
-bioFull <- join(all, bio)
+all <- expand.grid(Valid=unique(bio$Valid), Label=unique(bio$Label), Depth_binned=unique(bio$Depth_binned))
+bio_all <- left_join(all, bio)
 # replace NAs by 0
-bioFull$Abund[which(is.na(bioFull$Abund))] <- 0 
-length(which(is.na(bioFull)))  # if 0 --> OK
+bio_all$Abund[which(is.na(bio_all$Abund))] <- 0
+length(which(is.na(bio_all)))  # if 0 --> OK
 
 # add cast number
-bioFull$cast <- as.numeric(str_split_fixed(bioFull$Label, fixed("_"), 3)[, 3]) * 2 - 1
-# ggplot(bioFull[bioFull$Valid == "fish",]) + geom_point(aes(y=-DepthBin, x=Label, size=Abund)) # + scale_size_area()
+label_bits <- str_split_fixed(bio_all$Label, fixed("_"), 3)
+bio_all$cast <- as.numeric(label_bits[, 3]) * 2 - 1
+# ggplot(bio_all[bio_all$Valid == "fish",]) + geom_point(aes(y=-Depth_binned, x=Label, size=Abund)) # + scale_size_area()
+# add transect number
+bio_all$transect <- label_bits[, 2]
 
 # get volume sampled per bin
+# count number of frames from the datfile
 files <- list.files(str_c(data, "/zooprocess/"), pattern=glob2rx("*_datfile.txt"), full=TRUE)
-dat <- adply(files, 1, read.table, sep=";", strip.white=TRUE)
-dat$DepthBin <- round_any(dat$V3/10, bin)
+dat <- adply(files, 1, read.table, sep=";", strip.white=TRUE, .progress="text")
+dat$Depth_binned <- round_any(dat$V3/10, bin)
 
 # add transect name
 fileNames <- basename(files)
 transects <- str_replace(fileNames, "_datfile.txt", "")
 dat$Label <- transects[dat$X1]
 
-# compute volume from number of images
-vol <- ddply(dat, ~Label+DepthBin, nrow)
-vol$vol.m3 <- vol$V1 * 7.78 / 1000
+# compute volume from number of frames
+vol <- group_by(dat, Label, Depth_binned) %>% summarise(n_frames=n())
+vol$vol.m3 <- vol$n_frames * 7.78 / 1000
 
 
 # get volume in the biological data
-d <- join(bioFull, vol[,c(1,2,4)])
+d <- left_join(bio_all, select(vol, -n_frames))
+# and compute concentration
 d$abund.m3 <- d$Abund / d$vol.m3
 
-dd <- dcast(d, cast+DepthBin~Valid, value.var="abund.m3")
+# cleanup data.frame
+d <- select(d, transect, cast, depth=Depth_binned, taxon=Valid, abund=Abund, abund.m3)
+
+# convert to wide format for multivariate stats
+dd <- dcast(d, transect+cast+depth~taxon, value.var="abund.m3")
 
 # }
-
+save(d, dd, file="isiis_catches.Rdata")
 
 ##{ Associate environmental data with biological records ------------------
 
