@@ -109,16 +109,6 @@ isiis_in_transects <- ddply(transects, ~name, function(x, d) {
     # remove incorrect data: salinity above 30m in downcasts
     df[which(df$down.up %in% "down" & df$Depth.m <= 30), c("Salinity.PPT", "Density")] <- NA
     # ggplot(df, aes(x=dist_from_start, y=-Depth.m, colour=Salinity.PPT))  + geom_point() + scale_color_spectral()
-    
-    # compute anomalies (with respect to the average CTD cast)
-    # round depth over which to compute the mean value of the variable
-    df$Depth.rounded <- round_any(df$Depth.m, 0.5)
-    # compute anomaly
-    dfm <- gather_(df, key="variable", value="value", gather=vars)
-    dfmm <- group_by(dfm, variable, Depth.rounded) %>% summarise(mean=mean(value, na.rm=T))
-    dfm <- left_join(dfm, dfmm)
-    dfm$anomaly <- dfm$value - dfm$mean
-    # insert that into the original data
 
     # store data file
     dir.create(str_c("transects/", x$name), showWarnings=FALSE, recursive=TRUE)
