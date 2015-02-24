@@ -63,7 +63,7 @@ ts$dateTime <- ymd_hms(ts$dateTime)
 
 # round ISIIS time to the second, to match with the ship's GPS
 d$dateTime <- round_any(d$dateTimeMsec, 1)
-# NB: round turns this into a POSIXlt object
+# NB: round turns this into a POSIXlt object, hence the use of round_any
 
 # get lat-lon from the TS record
 d <- left_join(d, select(ts, dateTime, lat, lon), by="dateTime")
