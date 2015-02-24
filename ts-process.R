@@ -61,7 +61,7 @@ transects$dateTimeEnd <- ymd_hms(transects$dateTimeEnd)
 
 
 pdf("ts-transects.pdf")
-ts_in_transect <- ddply(transects, ~name, function(x, data) {
+ts_in_transects <- ddply(transects, ~name, function(x, data) {
 	message(x$name)
 
   # extract the appropriate portion of the data
@@ -89,7 +89,7 @@ dev.off()
 
 # write the complete record
 write.csv(ts, file="ts.csv", row.names=FALSE)
-write.csv(ts_in_transect, file="ts_in_transect.csv", row.names=FALSE)
+write.csv(ts_in_transects, file="ts_in_transects.csv", row.names=FALSE)
 
 # }
 
