@@ -16,16 +16,19 @@ library("ggplot2")
 library("reshape2")
 library("grid")
 library("gridExtra")
+library("doParallel")
 
 source("lib_plot.R")
 source("lib_zooprocess.R")
+
+registerDoParallel(cores=4)
 
 
 ##{ Read abundance data from zooprocess -----------------------------------
 
 # read identifications from zooprocess
 files <- list.files(str_c(data, "/zooprocess/"), pattern=glob2rx("*_dat1.txt"), full=TRUE)
-pids <- ldply(files, read.pid, .progress="text")
+pids <- ldply(files, read.pid, .progress="text", .parallel=TRUE)
 # clean names
 pids$Valid[which(pids$Valid %in% c("sipho_tail", "sipho_round"))] <- "sipho"
 pids$Valid <- str_replace(pids$Valid, "ephyrae_side", "ephyrae")
