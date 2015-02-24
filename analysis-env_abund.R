@@ -6,16 +6,20 @@
 #
 #--------------------------------------------------------------------------
 
+data <- "~/Dropbox/visufront-data/"
+
 library("stringr")
+library("lubridate")
 library("plyr")
+library("dplyr")
 library("ggplot2")
 library("reshape2")
 library("grid")
 library("gridExtra")
+
 source("lib_plot.R")
 source("lib_zooprocess.R")
 
-data <- "~/Dropbox/visufront-data/"
 
 ##{ Read abundance data from zooprocess -----------------------------------
 
