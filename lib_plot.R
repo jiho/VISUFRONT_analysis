@@ -20,6 +20,16 @@ scale_colour_spectral <- function(...) {
 }
 scale_color_spectral <- scale_colour_spectral
 
+# Simple black to white color map
+scale_fill_bw <- function(...) {
+  scale_fill_gradient(low="black", high="white")
+}
+scale_colour_bw <- function(...) {
+  scale_colour_gradient(low="black", high="white")
+}
+scale_color_bw <- scale_colour_bw
+
+
 # Interpolate a slice of data for which the x-axis is time
 interp.time <- function(x, y, z, nx=length(x)/100, y.step=2.5, ...) {
   library("akima")
