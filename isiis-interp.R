@@ -80,5 +80,6 @@ l_ply(isiisFiles, function(file) {
   do.call(grid.arrange, plots)
   dev.off()
   write.csv(dcast(ei, Distance.km+Depth.m~variable, value.var="value"), file=str_c(dir, "/isiis_interp.csv"),  row.names=FALSE)
+  # TODO the oxygen looks marked by the original data resolution. probably a problem between up and down casts, because of laggy sensor. Look into this.
 
 })
