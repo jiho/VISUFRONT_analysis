@@ -67,13 +67,9 @@ l_ply(isiisFiles, function(file) {
   # TODO try kriging
   
   # compute anomalies
-  eiAnom <- ddply(eiCoarse, ~variable+Depth.m, function(x) {
-    mean <- mean(x$value, na.rm=TRUE)
-    x$value <- x$value - mean
-    return(x)
-  })
-  levels(eiAnom$variable) <- str_c(levels(eiAnom$variable), ".anomaly")
-  eiCoarse <- rbind(eiCoarse, eiAnom)
+  ei_anom <- group_by(ei, variable, Depth.m) %>% mutate(value=(value - mean(value, na.rm=T)))
+  levels(ei_anom$variable) <- str_c(levels(ei_anom$variable), ".anomaly")
+  ei <- rbind(ei, ei_anom)
 
     ggplot(mapping=aes(x=Distance.nm, y=-Depth.m, fill=value)) +
   plots <- dlply(ei, ~variable, function(Xi) {
