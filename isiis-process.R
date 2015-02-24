@@ -102,6 +102,11 @@ isiis_in_transects <- ddply(transects, ~name, function(x, data) {
     # plot to check
     print(ggplot(cData) + geom_point(aes(x=dist_from_shore, y=-Depth.m, colour=down.up), na.rm=T) + ggtitle(x$name))
 
+    # remove incorrect data: above 30m in downcasts
+    cData <- filter(cData, !(cData$down.up %in% "down" & cData$Depth.m <= 30))
+    # ggplot(e, aes(x=distanceFromVlfr, y=-Depth.m, colour=down.up)) + geom_point()
+    # ggplot(eC, aes(x=distanceFromVlfr, y=-Depth.m, colour=Salinity.PPT))  + geom_point() + scale_colour_spectral()
+
     # store data file
     dir.create(str_c("transects/", x$name), showWarnings=FALSE, recursive=TRUE)
     write.csv(cData, file=str_c("transects/", x$name, "/isiis.csv"), row.names=FALSE)
