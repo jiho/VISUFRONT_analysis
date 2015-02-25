@@ -61,6 +61,7 @@ print(d %>% group_by(transect, Valid) %>%
     summarise(tot_abund=sum(Abund)) %>%
     spread(key=transect, value=tot_abund), n=50)
 # TODO one NA group in cc4. check this
+d <- filter(d, !is.na(Valid))
 
 # get volume sampled per bin
 # get frame (2048x2048 image) names from the datfile
