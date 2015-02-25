@@ -31,18 +31,17 @@ registerDoParallel(cores=4)
 files <- list.files(str_c(data, "/zooprocess/"), pattern=glob2rx("*_dat1.txt"), full=TRUE)
 system.time(pids <- ldply(files, read.pid, .progress="text", .parallel=TRUE))
 # clean names
-pids$Valid[which(pids$Valid %in% c("sipho_tail", "sipho_round"))] <- "sipho"
-pids$Valid <- str_replace(pids$Valid, "ephyrae_side", "ephyrae")
-pids$Valid <- str_replace(pids$Valid, "radiolarians", "radiolarian")
-pids$Valid <- str_replace(pids$Valid, "shrimp_large", "shrimps")
-pids$Valid <- str_replace(pids$Valid, "polychaets", "polychaetes")
+(taxa <- sort(unique(pids$Valid)))
+
+# remove unwanted, numerous particles
+d <- filter(pids, !(Valid %in% c("noise", "bad_focus", "det_aggregates", "det_fibers", "det_aggregates_day", "duplicates", "unidentified", "unidentified_of_interest")))
 
 # TODO group some taxa together
 
 # compute abundance per depth bin
 bin <- 1
-pids$depth <- round_any(pids$Depth, bin)
-d <- group_by(pids, Valid, Label, depth) %>% summarise(Abund=n())
+d$depth <- round_any(d$Depth, bin)
+d <- group_by(d, Valid, Label, depth) %>% summarise(Abund=n())
 
 # add profile number
 label_bits <- str_split_fixed(d$Label, fixed("_"), 3)
@@ -50,6 +49,13 @@ d$profile <- as.numeric(label_bits[, 3])
 # add transect number
 d$transect <- label_bits[, 2]
 
+# check abundances
+print(
+  d %>% group_by(transect, Valid) %>%
+    summarise(tot_abund=sum(Abund)) %>%
+    spread(key=transect, value=tot_abund)
+, n=50)
+# TODO one NA group in cc4. check this
 
 # get volume sampled per bin
 # get frame (2048x2048 image) names from the datfile
