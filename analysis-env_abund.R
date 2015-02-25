@@ -36,6 +36,13 @@ system.time(pids <- ldply(files, read.pid, .progress="text", .parallel=TRUE))
 # remove unwanted, numerous particles
 d <- filter(pids, !(Valid %in% c("noise", "bad_focus", "det_aggregates", "det_fibers", "det_aggregates_day", "duplicates", "unidentified", "unidentified_of_interest")))
 
+# basic counts
+# number of organisms
+nrow(d)
+# [1] 113044
+# number of groups
+length(unique(d$Valid))
+
 # TODO group some taxa together
 
 # compute abundance per depth bin
