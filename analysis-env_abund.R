@@ -44,10 +44,9 @@ bin <- 1
 pids$depth <- round_any(pids$Depth, bin)
 d <- group_by(pids, Valid, Label, depth) %>% summarise(Abund=n())
 
-# add cast number
+# add profile number
 label_bits <- str_split_fixed(d$Label, fixed("_"), 3)
-d$cast <- as.numeric(label_bits[, 3]) * 2 - 1
-# ggplot(bio_all[bio_all$Valid == "fish",]) + geom_point(aes(y=-Depth_binned, x=Label, size=Abund)) # + scale_size_area()
+d$profile <- as.numeric(label_bits[, 3]) * 2 - 1
 # add transect number
 d$transect <- label_bits[, 2]
 
@@ -58,7 +57,7 @@ files <- list.files(str_c(data, "/zooprocess/"), pattern=glob2rx("*_datfile.txt"
 dat <- adply(files, 1, read.table, sep=";", strip.white=TRUE, .progress="text")
 # bin the depth over the same bins
 dat$depth <- round_any(dat$V3/10, bin)
-# add transect+cast Label
+# add transect+profile Label
 file_names <- basename(files)
 labels <- str_replace(file_names, "_datfile.txt", "")
 dat$Label <- labels[dat$X1]
@@ -73,7 +72,7 @@ d <- left_join(d, select(dat, -n_frames))
 d$abund.m3 <- d$Abund / d$vol.m3
 
 # cleanup data.frame
-d <- select(ungroup(d), transect, cast, depth, taxon=Valid, abund.m3)
+d <- select(ungroup(d), transect, profile, depth, taxon=Valid, abund.m3)
 
 # }
 save(d, bin, file="isiis_catches.Rdata")
