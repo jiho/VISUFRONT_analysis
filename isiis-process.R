@@ -47,7 +47,7 @@ d$Oxygen.ml.l[d$Oxygen.ml.l <= 0] <- NA
 d$Oxygen.ml.l[d$Oxygen.ml.l >= 8] <- NA
 
 # use salinity, temperature and pressure to compute seawater density using UNESCO formula
-d$Density <- swRho(d$Salinity.PPT, d$Temp.C, d$Pressure.dbar, eos="unesco")
+d$Density <- swSigmaTheta(d$Salinity.PPT, d$Temp.C, d$Pressure.dbar)
 
 # identify the role of variables
 vars <- c("Temp.C", "Salinity.PPT", "Fluoro.volts", "Oxygen.ml.l", "Irrandiance.UE.cm", "Density")
