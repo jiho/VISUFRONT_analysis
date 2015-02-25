@@ -164,12 +164,12 @@ all <- left_join(all_loc, d)
 all$abund.m3[is.na(all$abund.m3)] <- 0
 
 # check how many geolocalised capture we cannot match with hydrological data
-# there should not be any... but there are because of differences in rounding depth probably
+# there should not be any...
 allf <- full_join(all_loc, d)
 nrow(allf) - nrow(all)
-group_by(allf, transect, profile) %>% summarise(sum(is.na(lat)))
-unique(filter(allf, is.na(lat))[,1:3])
-# -> OK, just a few missing bits, forget about it
+# -> OK!
+# group_by(allf, transect, profile) %>% summarise(sum(is.na(lat)))
+# unique(filter(allf, is.na(lat))[,1:3])
 
 # convert to wide format for multivariate stats
 d <- all
