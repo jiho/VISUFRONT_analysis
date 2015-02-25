@@ -46,7 +46,7 @@ d <- group_by(pids, Valid, Label, depth) %>% summarise(Abund=n())
 
 # add profile number
 label_bits <- str_split_fixed(d$Label, fixed("_"), 3)
-d$profile <- as.numeric(label_bits[, 3]) * 2 - 1
+d$profile <- as.numeric(label_bits[, 3])
 # add transect number
 d$transect <- label_bits[, 2]
 
