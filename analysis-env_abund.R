@@ -103,6 +103,9 @@ h5 <- read.csv("transects/cross_current_5/isiis.csv")
 h5$transect <- "cc5"
 h <- rbind(h4, h5)
 
+# total number of casts
+nrow(unique(select(h, transect, cast))
+
 # keep only down casts (the biological data is on downcasts only)
 h <- filter(h, down.up=="down")
 
