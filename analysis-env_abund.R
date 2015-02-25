@@ -87,12 +87,12 @@ d$abund.m3 <- d$Abund / d$vol.m3
 d <- select(ungroup(d), transect, profile, depth, taxon=Valid, abund.m3)
 
 # }
-# save(d, bin, file="isiis_catches.Rdata")
+save(d, bin, file="zooprocess_data.Rdata")
 
 
+load("zooprocess_data.Rdata")
 ##{ Geolocalize abundance data ---------------------------------------------
 
-# load("isiis_catches.Rdata")
 # get distance measure, depth, and date/time from the hydrological data
 # this will allow us to extract env data from the interpolated record
 
@@ -173,7 +173,10 @@ d <- all
 dw <- spread(d, key=taxon, value=abund.m3)
 
 # }
-save(d, dw, file="isiis_catches.Rdata")
+save(d, dw, file="zooprocess_data_geoloc.Rdata")
+
+
+load("zooprocess_data_geoloc.Rdata")
 
 
 ##{ Associate environmental data with biological records ------------------
