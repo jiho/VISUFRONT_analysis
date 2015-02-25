@@ -114,6 +114,11 @@ isiis_in_transects <- ddply(transects, ~name, function(x, d) {
     # compute profile number (for zooprocess)
     # one profile = up + down cast
     df$profile <- ceiling(df$cast / 2)
+    # profiles are always numbered from the coast to offshore for cross current transects
+    # reverse direction for those
+    if (str_detect(x$name, "cross") & df$dist_from_shore[1] > df$dist_from_shore[nrow(df)]) {
+      df$profile <- max(df$profile) - df$profile + 1
+    }
 
     # plot to check
     print(ggplot(df) + geom_point(aes(x=dist_from_shore, y=-Depth.m, colour=down.up), na.rm=T) + ggtitle(x$name))
