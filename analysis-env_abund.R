@@ -75,47 +75,148 @@ d$abund.m3 <- d$Abund / d$vol.m3
 d <- select(ungroup(d), transect, profile, depth, taxon=Valid, abund.m3)
 
 # }
-save(d, bin, file="isiis_catches.Rdata")
+# save(d, bin, file="isiis_catches.Rdata")
 
 
-load("isiis_catches.Rdata")
+##{ Geolocalize abundance data ---------------------------------------------
+
+# load("isiis_catches.Rdata")
+# get distance measure, depth, and date/time from the hydrological data
+# this will allow us to extract env data from the interpolated record
+
+# read raw hydrological data
+h4 <- read.csv("transects/cross_current_4/isiis.csv")
+h4$transect <- "cc4"
+h5 <- read.csv("transects/cross_current_5/isiis.csv")
+h5$transect <- "cc5"
+h <- rbind(h4, h5)
+
+# keep only down casts (the biological data is on downcasts only)
+h <- filter(h, down.up=="down")
+
+# keep only the transects x cast investigated in the biological data
+h <- filter(h, interaction(transect, profile) %in% unique(interaction(d$transect, d$profile)))
+
+# parse date and time
+options(digits.secs=2)
+h$dateTimeMsec <- ymd_hms(h$dateTimeMsec)
+h$dateTime <- ymd_hms(h$dateTime)
+
+# bin depth over the same bins as biological data to be able to join them
+h$depth <- round_any(h$Depth.m, bin)
+
+# average location data per depth bin
+loc <- h %>%
+      select(transect, profile, depth, dateTime=dateTimeMsec, starts_with("dist"), lat, lon) %>%
+      group_by(transect, profile, depth) %>%
+      summarise_each(fun="mean")
+
+# some depth bins are not covered; interpolate the location data in those bins
+loc <- ddply(loc, ~transect+profile, function(x) {
+
+  obs_depths <- x$depth                                  # observed
+  all_depths <- seq(min(x$depth), max(x$depth), by=bin)  # full range
+
+  # linear interpolation
+  linint <- function(y, x_from=obs_depths, x_to=all_depths) {
+    approx(x=x_from, y=y, xo=x_to)$y
+  }
+  
+  # interpolate all data
+  dateTime        <- as.POSIXct(linint(x$dateTime), origin=ymd("1970-01-01"), tz="UTC")
+  dist_from_start <- linint(x$dist_from_start)
+  dist_from_vlfr  <- linint(x$dist_from_vlfr)
+  dist_from_shore <- linint(x$dist_from_shore)
+  lat             <- linint(x$lat)
+  lon             <- linint(x$lon)
+  
+  return(data.frame(depth=all_depths, dateTime, dist_from_start, dist_from_vlfr, dist_from_shore, lat, lon))
+})
+
+# these are all the actually sampled locations/times
+# in the biological data, we only have data where something was recorded
+# joint the two to add zeros in the biological record when nothing was captured
+# compute all possibilities of location x taxa
+taxa <- sort(unique(d$taxon))
+all_loc <- ddply(loc, .(transect, profile, depth), function(x) {
+  data.frame(x, taxon=taxa)
+})
+
+# for all points sampled, add captures where we have some
+all <- left_join(all_loc, d)
+# this puts NAs where there are no captures
+# replace NAs by 0
+all$abund.m3[is.na(all$abund.m3)] <- 0
+
+# check how many geolocalised capture we cannot match with hydrological data
+# there should not be any... but there are because of differences in rounding depth probably
+allf <- full_join(all_loc, d)
+nrow(allf) - nrow(all)
+group_by(allf, transect, profile) %>% summarise(sum(is.na(lat)))
+unique(filter(allf, is.na(lat))[,1:3])
+# -> OK, just a few missing bits, forget about it
+
+# convert to wide format for multivariate stats
+d <- all
+dw <- spread(d, key=taxon, value=abund.m3)
+
+# }
+save(d, dw, file="isiis_catches.Rdata")
+
+
 ##{ Associate environmental data with biological records ------------------
 
-# read env data
-e <- read.csv("transects/cross_current_4/isiis.csv")
-ei <- read.csv("transects/cross_current_4/isiis_interp_coarse.csv")
+load("isiis_catches.Rdata")
+# NB: we read environmental data from the interpolated version to
+#     - smooth out small scale variability
+#       (that might not be a good idea for fine scale patterns however...)
+#     - use anomalies for env variables, which are only computed on the interpolated fields
 
-# get distance associated with biological data to be able to extract environmental data associated with biological data
-# compute distances for each depth bin
-e$DepthBin <- round_any(e$Depth.m, bin)
-eLoc <- ddply(e, ~cast+down.up+DepthBin, function(x) {
-  colMeans(x[,c("lat", "lon", "distanceFromStart", "distanceFromVlfr", "distanceFromShore")])
-}, .progress="text")
-# get the distances
-dLoc <- join(dd, eLoc, type="inner")
+# read interpolated data
+ei4 <- read.csv("transects/cross_current_4/isiis_interp.csv")
+ei4$transect <- "cc4"
+ei5 <- read.csv("transects/cross_current_5/isiis_interp.csv")
+ei5$transect <- "cc5"
+ei <- rbind(ei4, ei5)
 
-# interpolate env data at locations of biological data
-xy <- dLoc[,c("distanceFromVlfr", "DepthBin")];
 
-get.env <- function(X, xy) {
-  m <- acast(X, Distance.nm ~ Depth.m, value="value")
-  x <- sort(unique(X$Distance.nm))
-  y <- sort(unique(X$Depth.m))
+# Extract environmental data in X to locations in xy
+get.env <- function(env, locs) {
+  # prepare a x,y,z list (persp-like) for interp.surface
+  m <- acast(env, Distance.km ~ Depth.m, value="value")
+  x <- sort(unique(env$Distance.km))
+  y <- sort(unique(env$Depth.m))
   xyz <- list(x=x, y=y, z=m)
   # image(xyz)
   library("fields")
-  i <- interp.surface(xyz, loc=xy)
-  return(i)
+  i <- interp.surface(xyz, loc=as.matrix(locs))
+  return(data.frame(locs, value=i))
 }
 
-eim <- melt(ei, id.vars=c("Distance.nm", "Depth.m"))
-eiB <- ddply(eim, ~variable, get.env, xy=xy)
-eiBd <- as.data.frame(t(eiB[,-1]))
-names(eiBd) <- eiB[,1]
+env_at_loc <- ddply(dw, ~transect, function(x) {
+  # get locations of biological data for this transect
+  this_loc <- select(x, dist_from_shore, depth)
 
-D <- cbind(dLoc, eiBd)
+  # get interpolated environmental data for this transect
+  this_env <- filter(ei, transect == x$transect[1])
+  # convert it to tall format to treat each variable separately
+  this_env <- gather(this_env, key=variable, value=value, -transect, -Distance.km, -Depth.m)
+  
+  # extract env data (for each variable) at those locations
+  env_at_loc <- group_by(this_env, transect, variable) %>% do(get.env(., locs=this_loc))
+
+  # convert back to wide format
+  env_at_loc <- spread(env_at_loc, key=variable, value=value)
+
+  return(env_at_loc)
+})
+
+# and environmental data to the geolocalised captures
+d <- left_join(d, env_at_loc)
+dw <- left_join(dw, env_at_loc)
 
 # }
+save(d, dw, file="isiis_catches.Rdata")
 
 
 ##{ Regression trees ------------------------------------------------------
