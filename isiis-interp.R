@@ -62,7 +62,7 @@ l_ply(isiisFiles, function(file) {
 
 
   # interpolation across the transect
-  ei <- ddply(emm, ~variable, my.interp.dist, duplicate="mean", x.step=250, y.step=1, anisotropy=1200, smooth=FALSE, theta=0.5, .progress="text")
+  ei <- ddply(emm, ~variable, my.interp.dist, duplicate="mean", x.step=250, y.step=1, anisotropy=2000, smooth=TRUE, theta=0.22, .progress="text")
   # TODO try kriging
   
   # compute anomalies
