@@ -43,14 +43,6 @@ bin <- 1
 pids$Depth_binned <- round_any(pids$Depth, bin)
 bio <- group_by(pids, Valid, Label, Depth_binned) %>% summarise(Abund=n())
 
-# add zeros when nothing was captured in a depth bin
-# compute all possibilities
-all <- expand.grid(Valid=unique(bio$Valid), Label=unique(bio$Label), Depth_binned=unique(bio$Depth_binned))
-bio_all <- left_join(all, bio)
-# replace NAs by 0
-bio_all$Abund[which(is.na(bio_all$Abund))] <- 0
-length(which(is.na(bio_all)))  # if 0 --> OK
-
 # add cast number
 label_bits <- str_split_fixed(bio_all$Label, fixed("_"), 3)
 bio_all$cast <- as.numeric(label_bits[, 3]) * 2 - 1
