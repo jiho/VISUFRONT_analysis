@@ -180,6 +180,60 @@ save(d, dw, file="zooprocess_data_geoloc.Rdata")
 
 
 load("zooprocess_data_geoloc.Rdata")
+##{ Distribution of a few groups -------------------------------------------
+
+# flag day and night
+dw$time_of_day <- factor(dw$transect, levels=c("cc4", "cc5"), labels=c("night", "day"))
+d$time_of_day <- factor(d$transect, levels=c("cc4", "cc5"), labels=c("night", "day"))
+
+# read interpolated data
+ei4 <- read.csv("transects/cross_current_4/isiis_interp.csv")
+ei4$transect <- "cc4"
+ei5 <- read.csv("transects/cross_current_5/isiis_interp.csv")
+ei5$transect <- "cc5"
+ei <- rbind(ei4, ei5)
+ei$time_of_day <- factor(ei$transect, levels=c("cc4", "cc5"), labels=c("night", "day"))
+
+# plot physics
+base <- ggplot(data=ei, aes(x=Distance.km, y=-Depth.m)) +
+          facet_grid(time_of_day~.) +
+          labs(x="Distance from shore (km)", y="Depth (m)") +
+          scale_fill_spectral(na.value=NA) + scale_x_continuous(expand=c(0,0)) + scale_y_continuous(expand=c(0,0))
+sal_contour <- geom_contour(aes(z=Salinity.PPT), breaks=38.25, colour="white", na.rm=T, alpha=0.7)
+base + geom_raster(aes(fill=Salinity.PPT))
+base + geom_raster(aes(fill=Salinity.PPT)) + sal_contour
+base + geom_raster(aes(fill=Fluoro.volts)) + sal_contour
+base + geom_raster(aes(fill=Temp.C)) + sal_contour
+base + geom_raster(aes(fill=Temp.C.anomaly)) + sal_contour + labs(fill="Temp.C\nanomaly")
+base + geom_raster(aes(fill=Density.anomaly)) + sal_contour
+
+# pot biological groups
+# base plot
+base <- ggplot(data=dw, aes(x=dist_from_shore, y=-depth)) +
+          geom_point(size=0.4, alpha=0.2) +
+          facet_grid(time_of_day~.) +
+          geom_contour(aes(x=Distance.km, y=-Depth.m, z=Salinity.PPT), data=ei, breaks=38.25, colour="grey50", na.rm=T) +
+          scale_size_area() +
+          labs(x="Distance from shore (km)", y="Depth (m)")
+
+(taxa <- unique(d$taxon))
+
+base + geom_point(aes(size=fish_larvae)) 
+# surface, coastal
+base + geom_point(aes(size=doliolids))
+# surface, coastal
+base + geom_point(aes(size=phyto_diatom_chains))
+# dcm?, offshore
+base + geom_point(aes(size=append_fritill))
+# deep
+base + geom_point(aes(size=chaetognaths))
+# ~surface, coastal
+base + geom_point(aes(size=cteno_mertens))
+# coastal, deep
+base + geom_point(aes(size=ephyrae))
+# coastal strong migration
+
+# }
 
 
 ##{ Associate environmental data with biological records ------------------
