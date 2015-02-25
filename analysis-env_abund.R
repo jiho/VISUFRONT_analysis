@@ -29,7 +29,7 @@ registerDoParallel(cores=4)
 
 # read identifications from zooprocess
 files <- list.files(str_c(data, "/zooprocess/"), pattern=glob2rx("*_dat1.txt"), full=TRUE)
-pids <- ldply(files, read.pid, .progress="text", .parallel=TRUE)
+system.time(pids <- ldply(files, read.pid, .progress="text", .parallel=TRUE))
 # clean names
 pids$Valid[which(pids$Valid %in% c("sipho_tail", "sipho_round"))] <- "sipho"
 pids$Valid <- str_replace(pids$Valid, "ephyrae_side", "ephyrae")
@@ -53,7 +53,7 @@ d$transect <- label_bits[, 2]
 
 
 # get volume sampled per bin
-# count number of frames from the datfile
+# get frame (2048x2048 image) names from the datfile
 files <- list.files(str_c(data, "/zooprocess/"), pattern=glob2rx("*_datfile.txt"), full=TRUE)
 dat <- adply(files, 1, read.table, sep=";", strip.white=TRUE, .progress="text")
 # bin the depth over the same bins
