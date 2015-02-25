@@ -57,11 +57,9 @@ d$profile <- as.numeric(label_bits[, 3])
 d$transect <- label_bits[, 2]
 
 # check abundances
-print(
-  d %>% group_by(transect, Valid) %>%
+print(d %>% group_by(transect, Valid) %>%
     summarise(tot_abund=sum(Abund)) %>%
-    spread(key=transect, value=tot_abund)
-, n=50)
+    spread(key=transect, value=tot_abund), n=50)
 # TODO one NA group in cc4. check this
 
 # get volume sampled per bin
