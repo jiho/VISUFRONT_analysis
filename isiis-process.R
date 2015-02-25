@@ -27,10 +27,17 @@ d <- ldply(hydroFiles, function(file) {
 	read.isiis(file)
 }, .progress="text")
 
+options(digits.secs=2)
+d$dateTimeMsec <- ymd_hms(d$dateTimeMsec)
+
 # }
 
 
 ##{ Cleanup data ----------------------------------------------------------
+
+# remove an small back and forth trajectory in cross-front transect 5
+# ISIIS camera failure
+d <- filter(d, !(dateTimeMsec > ymd_hms("2013-07-25 08:11:30") & dateTimeMsec < ymd_hms("2013-07-25 10:32:11")))
 
 # remove erroneous values
 d$Temp.C[d$Temp.C <= 0] <- NA
