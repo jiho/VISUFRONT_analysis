@@ -13,10 +13,10 @@ spectral <- function(n=6) {
 }
 
 scale_fill_spectral <- function(...) {
-  scale_fill_gradientn(colours=spectral(...))
+  scale_fill_gradientn(colours=spectral(), ...)
 }
 scale_colour_spectral <- function(...) {
-  scale_colour_gradientn(colours=spectral(...))
+  scale_colour_gradientn(colours=spectral(), ...)
 }
 scale_color_spectral <- scale_colour_spectral
 
