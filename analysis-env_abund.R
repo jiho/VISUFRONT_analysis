@@ -232,6 +232,8 @@ base + geom_point(aes(size=cteno_mertens))
 # coastal, deep
 base + geom_point(aes(size=ephyrae))
 # coastal strong migration
+base + geom_point(aes(size=radiolarians_solitarian_dark)) + labs(size="radiolarian\nsolitary\ndark")
+
 
 # }
 save(d, dw, ei, file="zooprocess_data_env.Rdata")
@@ -341,26 +343,38 @@ plot.abund.env.map("radiolarians_solitarian_dark", "Fluoro.volts") + labs(size="
 
 ##{ Boosted regression trees ----------------------------------------------
 
-# library("gbm")
-# 
-# fit.tree <- function(taxon, verbose=FALSE, ...) {
-#   library("stringr")
-#   D <- dd[which(dd[,taxon] > 0),]
-#   D[,taxon] <- round(D[,taxon] * 100)
-#   formula <- as.formula(str_c(taxon , " ~ Fluoro.volts + Oxygen.ml.l + Oxygen.ml.l.anomaly + Salinity.PPT + Salinity.PPT.anomaly + Temp.C.anomaly"))
-#   m <- gbm(
-#     formula=radiolarian_dark ~ Fluoro.volts + Oxygen.ml.l + Oxygen.ml.l.anomaly + Salinity.PPT + Salinity.PPT.anomaly + Temp.C.anomaly,
-#     data=D,
-#     distribution="poisson",
-#     n.trees=1000,         # should be > 1000 to be robust
-#     shrinkage=0.001,      # should be small to allow enough trees
-#     cv.folds=5,           # allows estimating error in prediction and then use gbm.perf with method cv to find optimal n.trees
-#     interaction.depth=4,  # higher level interactions means faster fit => decrease shrink/learning rate to compensate
-#     bag.fraction=0.5,     # proportion of data randomly drawn to compute each tree, adds robustness to the model. Allows to use gbm.perf with method OOB to find optimal n.trees
-#     verbose=FALSE
-#   )
-# }
-# 
-# m <- fit.tree(taxon="radiolarian_dark")
-#
+fit.brt <- function(taxon, verbose=FALSE, ...) {
+  library("stringr")
+  dd <- dw[which(dw[,taxon] > 0),]
+  dd[,taxon] <- round(dd[,taxon] * 10)
+  vars <- c("Fluoro.volts", "Fluoro.volts.anomaly", "Oxygen.ml.l", "Oxygen.ml.l.anomaly", "Salinity.PPT", "Salinity.PPT.anomaly", "Temp.C", "Temp.C.anomaly")
+  dd <- dd[,c(taxon, vars)]
+  formula <- as.formula(str_c(taxon , " ~ ."))
+  library("gbm")
+  m <- gbm(
+    formula=formula,
+    data=dd,
+    distribution="poisson",
+    ...
+  )
+  print(m)
+  print(summary(m))
+  return(m)
+}
+
+# fit model
+m <- fit.brt(taxon="radiolarians_solitarian_dark", n.trees=4000, shrinkage=0.02, cv.folds=5, interaction.depth=4, verbose=FALSE)
+
+# predict distribution from environmental variables
+ei_var <- select(ei, -Distance.km, -Depth.m, -transect, -time_of_day)
+p <- predict(m, newdata=ei_var, n.trees=gbm.perf(m, method="cv", plot.it=FALSE), type="response")
+er <- cbind(ei, abund.m3=p/10)
+ggplot(data=er, aes(x=Distance.km, y=-Depth.m)) +
+  geom_raster(aes(fill=abund.m3)) +
+  geom_contour(aes(x=Distance.km, y=-Depth.m, z=Salinity.PPT), data=ei, breaks=38.25, colour="white", na.rm=T, alpha=0.7) +
+  facet_grid(time_of_day~.) +
+  scale_fill_bw(na.value=NA) +
+  scale_x_continuous(expand=c(0,0)) + scale_y_continuous(expand=c(0,0)) +
+  labs(x="Distance from shore (km)", y="Depth (m)")
+
 # }
