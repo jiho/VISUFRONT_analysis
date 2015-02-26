@@ -285,43 +285,56 @@ save(d, dw, file="zooprocess_data_with_env.Rdata")
 load("zooprocess_data_with_env.Rdata")
 ##{ Regression trees ------------------------------------------------------
 
-plot.abund.env.map <- function(taxon, variable) {
-  ggplot() + geom_raster(aes_string(x="Distance.nm", y="-Depth.m", fill=variable), data=ei) + scale_fill_spectral() + geom_point(aes_string(x="distanceFromVlfr", y="-DepthBin", size=taxon), data=D) + scale_size_area() + scale_x_continuous(limits=c(0,30))
-}
-
-plot.abund.env <- function(taxon, variable) {  
-  d <- D[which(D[,taxon] > 0),]
-  d[,taxon] <- log1p(d[,taxon])
-  ggplot(d, aes_string(x=variable, y=taxon)) + geom_point() + geom_smooth()
-}
-
 fit.tree <- function(taxon, ...) {
   library("stringr")
-  d <- D[which(D[,taxon] > 0),]
-  d[,taxon] <- log1p(d[,taxon])
-  formula <- str_c(taxon , "~ Fluoro.volts + Oxygen.ml.l + Oxygen.ml.l.anomaly + Salinity.PPT + Salinity.PPT.anomaly + Temp.C.anomaly")
+  # select taxon of interest
+  this_d <- dw[which(dw[,taxon] > 0),]
+  # log-transform catches to smooth variance
+  this_d[,taxon] <- log1p(this_d[,taxon])
+  # create model
+  formula <- str_c(taxon , "~ Fluoro.volts + Fluoro.volts.anomaly + Oxygen.ml.l + Oxygen.ml.l.anomaly + Salinity.PPT + Salinity.PPT.anomaly + Temp.C + Temp.C.anomaly")
+  # fit and inspect model
   library("mvpart")
-  mvpart(formula, data=d, ...)
+  m <- mvpart(formula, data=this_d, xv="1se", xvmult=100, xval=5, ...)
+  # NB: mvpart is deprecated and we don't use the multivariate aspect anyway so we should reimplement it with rpart
+  # library("rpart")
+  # m <- rpart(formula, data=this_d, rpart.control(minbucket=5, xval=5, cp=0.02))
+  # plot(m)
+  # text(m)
+  # print(m$variable.importance)
+
+  return(m)
 }
 
-m <- fit.tree("doliolids", xv="1se", xvmult=100, xval=5)
-plot.abund.env.map("doliolids", "Oxygen.ml.l")
-plot.abund.env.map("doliolids", "Fluoro.volts")
+plot.abund.env.map <- function(taxon, variable) {
+  ggplot(data=dw, aes(x=dist_from_shore, y=-depth)) +
+    geom_raster(aes_string(x="Distance.km", y="-Depth.m", fill=variable), data=ei) +
+    geom_contour(aes(x=Distance.km, y=-Depth.m, z=Salinity.PPT), data=ei, breaks=38.25, colour="white", na.rm=T, alpha=0.7) +
+    facet_grid(time_of_day~.) +
+    geom_point(size=0.4, alpha=0.2) +
+    scale_fill_spectral(na.value=NA) +
+    geom_point(aes_string(size=taxon)) +
+    scale_size_area() +
+    scale_x_continuous(expand=c(0,0)) + scale_y_continuous(expand=c(0,0)) +
+    labs(x="Distance from shore (km)", y="Depth (m)")
+}
 
-m <- fit.tree("ephyrae", xv="1se", xvmult=100, xval=5)
-plot.abund.env.map("ephyrae", "Oxygen.ml.l")
-plot.abund.env.map("ephyrae", "Salinity.PPT")
-plot.abund.env("ephyrae", "Oxygen.ml.l")
-plot.abund.env("ephyrae", "Salinity.PPT")
+(taxa <- unique(d$taxon))
 
-m <- fit.tree("fish", xv="1se", xvmult=100, xval=5)
-plot.abund.env.map("fish", "Temp.C.anomaly")
-plot.abund.env.map("fish", "Salinity.PPT")
+m <- fit.tree("doliolids")
+# -> temp + salinity
+plot.abund.env.map("doliolids", "Temp.C")
+plot.abund.env.map("doliolids", "Salinity.PPT")
 
-m <- fit.tree("radiolarian_dark", xv="1se", xvmult=100, xval=5)
-plot.abund.env.map("radiolarian_dark", "Fluoro.volts")
-plot.abund.env.map("radiolarian_dark", "Oxygen.ml.l")
-plot.abund.env("radiolarian_dark", "Fluoro.volts")
+m <- fit.tree("ephyrae")
+# bof
+
+m <- fit.tree("fish_larvae")
+# bof
+
+m <- fit.tree("radiolarians_solitarian_dark")
+# -> fluo, CV error 0.356
+plot.abund.env.map("radiolarians_solitarian_dark", "Fluoro.volts") + labs(size="radiolarian\nsolitary\ndark")
 
 # }
 
