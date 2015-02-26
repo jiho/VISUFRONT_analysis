@@ -378,3 +378,25 @@ ggplot(data=er, aes(x=Distance.km, y=-Depth.m)) +
   labs(x="Distance from shore (km)", y="Depth (m)")
 
 # }
+
+
+##{ Vertical migration -----------------------------------------------------
+
+dv <- filter(d, taxon %in% c("ephyrae", "append_fritill", "fish_larvae", "crust_copepods_euchaeta", "crust_copepods_calanus", "pteropods_cavol", "doliolids"))
+levels <- c("crust_copepods_euchaeta", "crust_copepods_calanus", "ephyrae", "pteropods_cavol", "fish_larvae", "doliolids", "append_fritill")
+labels <- levels
+labels <- str_replace(labels, "crust_", "")
+labels <- str_replace_all(labels, "_", "\n")
+dv$taxon <- factor(dv$taxon, levels, labels)
+
+# compute abundance per depth bin per transect
+dv <- dv %>% group_by(time_of_day, depth, taxon) %>% summarise(abund.m3=sum(abund.m3))
+
+# repeat observations of depth according to the value of abund.m3
+dv$abund.m3 <- round(dv$abund.m3 * 10)
+dv <- dv %>% filter(abund.m3 > 0) %>% group_by(taxon, add=T) %>% do(data.frame(select(., -abund.m3), n=0:.$abund.m3))
+
+
+ggplot(dv, aes(x=taxon, y=-depth)) + geom_violin(aes(fill=time_of_day), scale="width", size=0.2, adjust=2) + scale_fill_manual("", values=c("grey20", "white")) + labs(x="", y="Depth (m)")
+
+# }
