@@ -234,23 +234,15 @@ base + geom_point(aes(size=ephyrae))
 # coastal strong migration
 
 # }
+save(d, dw, ei, file="zooprocess_data_env.Rdata")
 
-
+load("zooprocess_data_env.Rdata")
 ##{ Associate environmental data with biological records ------------------
 
-load("isiis_catches.Rdata")
 # NB: we read environmental data from the interpolated version to
 #     - smooth out small scale variability
 #       (that might not be a good idea for fine scale patterns however...)
 #     - use anomalies for env variables, which are only computed on the interpolated fields
-
-# read interpolated data
-ei4 <- read.csv("transects/cross_current_4/isiis_interp.csv")
-ei4$transect <- "cc4"
-ei5 <- read.csv("transects/cross_current_5/isiis_interp.csv")
-ei5$transect <- "cc5"
-ei <- rbind(ei4, ei5)
-
 
 # Extract environmental data in X to locations in xy
 get.env <- function(env, locs) {
@@ -272,7 +264,7 @@ env_at_loc <- ddply(dw, ~transect, function(x) {
   # get interpolated environmental data for this transect
   this_env <- filter(ei, transect == x$transect[1])
   # convert it to tall format to treat each variable separately
-  this_env <- gather(this_env, key=variable, value=value, -transect, -Distance.km, -Depth.m)
+  this_env <- gather(this_env, key=variable, value=value, -transect, -Distance.km, -Depth.m, -time_of_day)
   
   # extract env data (for each variable) at those locations
   env_at_loc <- group_by(this_env, transect, variable) %>% do(get.env(., locs=this_loc))
@@ -288,9 +280,9 @@ d <- left_join(d, env_at_loc)
 dw <- left_join(dw, env_at_loc)
 
 # }
-save(d, dw, file="isiis_catches.Rdata")
+save(d, dw, file="zooprocess_data_with_env.Rdata")
 
-
+load("zooprocess_data_with_env.Rdata")
 ##{ Regression trees ------------------------------------------------------
 
 plot.abund.env.map <- function(taxon, variable) {
