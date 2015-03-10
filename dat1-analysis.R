@@ -53,8 +53,8 @@ files <- list.files(str_c(dir, "zooprocess/"), full = T)
 
 
 # Select dat1 files
-# dat1 <- files[which(str_detect(files, "_dat1.txt") == T)] # For all files
-dat1 <- files[which(str_detect(files, "byR_dat1.txt") == T)] # for certain files only
+dat1 <- files[which(str_detect(files, "_dat1.txt") == T)] # For all files
+# dat1 <- files[which(str_detect(files, "byR_dat1.txt") == T)] # for certain files only
 
 # select datfiles
 datfiles <- files[which(str_detect(files, "_datfile.txt") == T)]
@@ -150,7 +150,7 @@ sort(unique(pids$groups))
 #---------------------------------------------------------------------
  {
 
-
+ 
 # set depth BIN 
 binsize <- 1
 pids$DepthBin <- round_any(pids$Depth, binsize)
