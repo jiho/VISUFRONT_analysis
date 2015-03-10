@@ -122,7 +122,7 @@ min <- str_sub(gpsD$V1, 16, 17)
 sec <- str_sub(gpsD$V1, 19, 20)
 
 dateTime <- str_c(str_c(year, month, day, sep="-"), " ", str_c(hour, min, sec, sep=":"))
-dateTimeUTC <- ymd_hms(dateTime)
+dateTimeUTC <- ymd_hms(dateTime) - 2 * 3600 - 7
 
 # compensate for time difference with computer time
 # dateTime <- dateTimeUTC + 2 * 3600 - 7
@@ -163,7 +163,7 @@ transects <- read.csv("transects.csv", na.strings="", sep = ";", colClasses=c("c
 # --------------------------------------------------------------------
 
 # Subset data to work on fewer first
-gpsLag <- filter(gpsDf, dateTimeUTC > ymd_hms("2013-07-26 21:30:00") & dateTimeUTC < ymd_hms("2013-07-28 05:25:00"))
+gpsLag <- filter(gpsLf, dateTimeUTC > ymd_hms("2013-07-26 21:30:00") & dateTimeUTC < ymd_hms("2013-07-28 05:25:00"))
 range(gpsLag$dateTimeUTC)
 
 # plot it
@@ -171,28 +171,23 @@ ggplot() + geom_path(data= gpsLag, aes(x = lon, y = lat, colour = dateTimeUTC))
 # SOME DATA ARE MISSING AFTER THE FIRST LAGRANGIAN TRANSECT. We used to have these data
 
 # Find which data are missing
-filter(gpsLag, dateTimeUTC > as.POSIXct("2013-07-27 03:40:00") & dateTimeUTC < as.POSIXct("2013-07-27 09:10:00"))
+# filter(gpsLag, dateTimeUTC > as.POSIXct("2013-07-27 03:40:00") & dateTimeUTC < as.POSIXct("2013-07-27 09:10:00"))
 # NO DATA BETWEEN 3:42 AM to 9:05 AM on the 27th
 # 43.55036 7.586471 2013-07-27 03:42:55
 # 43.60356 7.417247 2013-07-27 09:05:40
 
 
 # Check very fine scale path 
-ggplot(data = filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:00") & dateTimeUTC < ymd_hms("2013-07-26 22:01:00")), aes(x = lon, y = lat)) + geom_path() + geom_point()
+p1 <- ggplot(data = filter(filter(gpsLf, dateTimeUTC > ymd_hms("2013-07-26 21:30:00") & dateTimeUTC < ymd_hms("2013-07-28 05:25:00")), dateTimeUTC > ymd_hms("2013-07-26 22:00:00") & dateTimeUTC < ymd_hms("2013-07-26 22:01:00")), aes(x = lon, y = lat)) + geom_path() + geom_point() + ggtitle("$GPGLL")
+p2 <- ggplot(data = filter(filter(gpsDf, dateTimeUTC > ymd_hms("2013-07-26 21:30:00") & dateTimeUTC < ymd_hms("2013-07-28 05:25:00")), dateTimeUTC > ymd_hms("2013-07-26 22:00:00") & dateTimeUTC < ymd_hms("2013-07-26 22:01:00")), aes(x = lon, y = lat)) + geom_path() + geom_point() + ggtitle("$GPGGA")
+
+
+pdf(file = "gps_1m.pdf", width = 8, height = 4)
+grid.arrange(p1, p2, ncol = 2)
+dev.off()
 # Very straight, this is good. 
 
 
-
-
-gpsLag[which(gpsLag$dateTimeUTC > ymd_hms("2013-07-26 23:30:00") & gpsLag$dateTimeUTC < as.POSIXct("2013-07-26 23:31:00")), ]
-
-filter(gpsLag, dateTimeUTC > as.POSIXct("2013-07-26 23:30:00"))
-
-
-, dateTimeUTC < as.POSIXct("2013-07-26 23:31:00"))
-
-
-filter(gpsLag, dateTimeUTC > as.POSIXct("2013-07-27 23:30:00"))[1:100,]
 
 
 # Read TS file in which we have the GPS data every 15s
@@ -248,7 +243,7 @@ head(ts)
 
 
 # Extract data from the lagrangian experiment
-tsLag <- filter(ts, dateTimeUTC > as.POSIXct("2013-07-26 17:07:00") & dateTimeUTC < as.POSIXct("2013-07-28 02:10:00"))
+tsLag <- filter(ts, dateTimeUTC > ymd_hms("2013-07-26 17:07:00") & dateTimeUTC < ymd_hms("2013-07-28 02:10:00"))
 # For some reasons, the time are wrong
 ggplot() + geom_path(data= tsLag, aes(x = lon, y = lat))
 
@@ -257,8 +252,10 @@ ggplot() + geom_bar(aes(x = bearing), data = tsLag, binwidth = 5) + polar()
 
 
 # Check very fine scale path 
-ggplot(data= filter(tsLag, dateTimeUTC > as.POSIXct("2013-07-26 18:07:00") & dateTimeUTC < as.POSIXct("2013-07-26 18:09:00")), aes(x = lon, y = lat)) + geom_path() + geom_point()
-# Very straight, this is good. 
+ggplot(data= filter(tsLag, dateTimeUTC > as.POSIXct("2013-07-26 21:33:00") & dateTimeUTC < as.POSIXct("2013-07-26 21:35:00")), aes(x = lon, y = lat)) + geom_path() + geom_point()
+# Very straight, this is good.
+
+
 
 
 
