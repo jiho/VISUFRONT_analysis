@@ -13,6 +13,7 @@ library("dplyr")
 library("ggplot2")
 library("lubridate")
 library("discuss")
+library("circular")
 
 
 # Concatenate all GPS files
@@ -182,9 +183,9 @@ p1 <- ggplot(data = filter(filter(gpsLf, dateTimeUTC > ymd_hms("2013-07-26 21:30
 p2 <- ggplot(data = filter(filter(gpsDf, dateTimeUTC > ymd_hms("2013-07-26 21:30:00") & dateTimeUTC < ymd_hms("2013-07-28 05:25:00")), dateTimeUTC > ymd_hms("2013-07-26 22:00:00") & dateTimeUTC < ymd_hms("2013-07-26 22:01:00")), aes(x = lon, y = lat)) + geom_path() + geom_point() + ggtitle("$GPGGA")
 
 
-pdf(file = "gps_1m.pdf", width = 8, height = 4)
+# pdf(file = "plot/gps_1m.pdf", width = 8, height = 4)
 grid.arrange(p1, p2, ncol = 2)
-dev.off()
+# dev.off()
 # Very straight, this is good. 
 
 
@@ -237,6 +238,7 @@ head(ts)
 
 # # We have access to the bearing of the boat every 15s
 
+
 # tmp <- sample_frac(ts, 0.05)
 # ggplot() + geom_bar(aes(x = bearing), data = tmp, binwidth = 5) + polar()
 # # It looks relevent
@@ -256,18 +258,112 @@ ggplot(data = filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 21:33:00") & dateT
 # Very straight, this is good.
 
 
+
 # Compare gps from TS and gps GPGGA
 ggplot() + 
 # TS data
-geom_path(data = filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:00") & dateTimeUTC < ymd_hms("2013-07-26 22:02:05")), aes(x = lon, y = lat)) + geom_point(data = filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:00") & dateTimeUTC < ymd_hms("2013-07-26 22:02:05")), aes(x = lon, y = lat)) +
+geom_path(data = filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:09:50")), aes(x = lon, y = lat), colour = "red") + geom_point(data = filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:09:50")), aes(x = lon, y = lat), colour = "red") +
 # GPS GPGGA data
-geom_path(data = filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:00") & dateTimeUTC < ymd_hms("2013-07-26 22:02:05")), aes(x = lon, y = lat)) + geom_point(data = filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:00") & dateTimeUTC < ymd_hms("2013-07-26 22:02:05")), aes(x = lon, y = lat))
-ggsave(file = "plot/gps_TS_GPGAA.pdf")
+geom_path(data = filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:09:50")), aes(x = lon, y = lat)) + geom_point(data = filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:09:50")), aes(x = lon, y = lat)) + coord_cartesian(xlim = c(7.56, 7.562), ylim = c(43.632, 43.634))
+# ggsave(file = "plot/gps_TS_GPGAA.pdf")
 
 
 
 
+# Compute bearing of from the GPS data for the 2 min period
+# --------------------------------------------------------------------
+gps2m <- filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:09:50"))
+gps2m$angle.rad <- NA
+
+
+# Compute bearing between each point and the next one (1s)
+for (i in 1:(nrow(gps2m)-1)) {
+    a <- geodDist(gps2m$lat[i+1], gps2m$lon[i+1], gps2m$lat[i], gps2m$lon[i])
+    b <- geodDist(gps2m$lat[i], gps2m$lon[i], gps2m$lat[i+1], gps2m$lon[i])
+    # check if positive values and correct if 
+    if (gps2m$lon[i+1] < gps2m$lon[i]) {
+    a <- -a
+    }
+    if (gps2m$lat[i+1] < gps2m$lat[i]) {
+    b <- -b
+    }
+    gps2m$angle.rad[i+1] <- atan2(b, a)
+}
+# convert to angle data
+gps2m$angle.rad <- as.trig(gps2m$angle.rad)  # set it as angles
+gps2m$bearing_gps <- as.bearing(gps2m$angle.rad)  # convert to 360° angles
+gps2m <- rename(gps2m, lon_gps = lon, lat_gps = lat)
+
+
+# Compute the mean bearing over 15s from the GPS GPGGA data
+gps2m$group <- rep(1:round_any(nrow(gps2m)/15, 1), each = 15)[-nrow(gps2m)-1]
 
 
 
 
+# Extract the same time period of the TS data
+ts2m <- filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:09:50"))
+ts2m$angle.rad_ts <- NA
+
+
+# Compute bearing between each point and the next one (1s)
+for (i in 1:(nrow(ts2m)-1)) {
+    a <- geodDist(ts2m$lat[i+1], ts2m$lon[i+1], ts2m$lat[i], ts2m$lon[i])
+    b <- geodDist(ts2m$lat[i], ts2m$lon[i], ts2m$lat[i+1], ts2m$lon[i])
+    # check if positive values and correct if 
+    if (ts2m$lon[i+1] < ts2m$lon[i]) {
+    a <- -a
+    }
+    if (ts2m$lat[i+1] < ts2m$lat[i]) {
+    b <- -b
+    }
+    ts2m$angle.rad_ts[i+1] <- atan2(b, a)
+}
+# convert to angle data
+ts2m$angle.rad_ts <- as.trig(ts2m$angle.rad_ts)  # set it as angles
+ts2m$bearing_ts <- as.bearing(ts2m$angle.rad_ts)  # convert to 360° angles
+
+
+
+
+# Join the two traj with their bearing
+ts_gps <- join(ts2m, gps2m)
+
+select(ts_gps, bearing, bearing_gps)
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# TS RAW BEARINGS ARE UNUSABLE
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+select(ts_gps, bearing_ts, bearing_gps)
+# But calculated bearing seems ok. 
+
+
+
+
+# Join GPS with TS data
+
+# Some means are biased by just one point (e.g. mean = 310°, and 1 is 40°)
+# But it's very similar on average which is good. 
+# We can add a filter that removes the data for which the diff in bearing is too high and due to a lack of accuracy of gps data
+
+
+ts_gps <- cbind(select(ts2m, lon, lat, bearing_ts, dateTimeUTC), ddply(gps2m, ~group, function(x) { 
+	# x <- gps2m[which(gps2m$group == 7), ]
+	
+	# FILTER BIASED CHANGES IN BEARING
+	x <- x[which(diff(x$bearing_gps) < abs(30)), ]
+	mean = mean.circular(as.bearing(x$bearing_gps))
+	lon = max(x$lon_gps)
+	lat = min(x$lat_gps)
+	
+	data.frame(mean_bearing_gps = mean, lon_gps = lon, lat_gps = lat)
+}))
+
+
+# Compute difference between mean bearing from gps and from ts
+mean(na.omit(as.numeric(ts_gps$mean_bearing_gps) - as.numeric(ts_gps$bearing_ts)))
+# MEAN OF -0.1147336° OF DIFFERENCE BETWEEN THE TOO. GOOD. 
+
+
+# # Compare gps from TS and gps GPGGA visually
+# ggplot() + geom_point(data = ts_gps_2m, aes(x = lon, y = lat, colour = bearing_ts)) + geom_point(data = ts_gps_2m, aes(x = lon_gps, y = lat_gps, colour = mean_bearing))
