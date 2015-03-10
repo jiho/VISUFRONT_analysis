@@ -122,7 +122,7 @@ min <- str_sub(gpsD$V1, 16, 17)
 sec <- str_sub(gpsD$V1, 19, 20)
 
 dateTime <- str_c(str_c(year, month, day, sep="-"), " ", str_c(hour, min, sec, sep=":"))
-dateTimeUTC <- ymd_hms(dateTime) - 2 * 3600 - 7
+dateTimeUTC <- ymd_hms(dateTime) - 2 * 3600# - 7
 
 # compensate for time difference with computer time
 # dateTime <- dateTimeUTC + 2 * 3600 - 7
@@ -137,8 +137,8 @@ gpsDf <- filter(gpsDf, !is.na(lon))
 
 
 # Cut into transects
-transects <- read.csv("transects.csv", na.strings="", sep = ";", colClasses=c("character", "POSIXct", "POSIXct"))
-
+# transects <- read.csv("transects.csv", na.strings="", sep = ";", colClasses=c("character", "POSIXct", "POSIXct"))
+#
 # d_ply(transects, ~name, function(x, gps) {
 #   # extract the portion of the GPS track
 #   cGps <- gps[gps$dateTime > x$dateTimeStart-5 & gps$dateTime < x$dateTimeEnd+5,]
@@ -163,7 +163,7 @@ transects <- read.csv("transects.csv", na.strings="", sep = ";", colClasses=c("c
 # --------------------------------------------------------------------
 
 # Subset data to work on fewer first
-gpsLag <- filter(gpsLf, dateTimeUTC > ymd_hms("2013-07-26 21:30:00") & dateTimeUTC < ymd_hms("2013-07-28 05:25:00"))
+gpsLag <- filter(gpsDf, dateTimeUTC > ymd_hms("2013-07-26 21:30:00") & dateTimeUTC < ymd_hms("2013-07-28 05:25:00"))
 range(gpsLag$dateTimeUTC)
 
 # plot it
@@ -252,13 +252,17 @@ ggplot() + geom_bar(aes(x = bearing), data = tsLag, binwidth = 5) + polar()
 
 
 # Check very fine scale path 
-ggplot(data= filter(tsLag, dateTimeUTC > as.POSIXct("2013-07-26 21:33:00") & dateTimeUTC < as.POSIXct("2013-07-26 21:35:00")), aes(x = lon, y = lat)) + geom_path() + geom_point()
+ggplot(data = filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 21:33:00") & dateTimeUTC < ymd_hms("2013-07-26 21:35:00")), aes(x = lon, y = lat)) + geom_path() + geom_point()
 # Very straight, this is good.
 
 
-
-
-
+# Compare gps from TS and gps GPGGA
+ggplot() + 
+# TS data
+geom_path(data = filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:00") & dateTimeUTC < ymd_hms("2013-07-26 22:02:05")), aes(x = lon, y = lat)) + geom_point(data = filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:00") & dateTimeUTC < ymd_hms("2013-07-26 22:02:05")), aes(x = lon, y = lat)) +
+# GPS GPGGA data
+geom_path(data = filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:00") & dateTimeUTC < ymd_hms("2013-07-26 22:02:05")), aes(x = lon, y = lat)) + geom_point(data = filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:00") & dateTimeUTC < ymd_hms("2013-07-26 22:02:05")), aes(x = lon, y = lat))
+ggsave(file = "plot/gps_TS_GPGAA.pdf")
 
 
 
