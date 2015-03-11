@@ -11,7 +11,7 @@ data_dir <- data_dir_path()
 
 library("ggplot2")
 library("reshape2")
-library("lubridate"))
+library("lubridate")
 library("stringr")
 library("plyr")
 library("dplyr")
@@ -20,31 +20,35 @@ library("dplyr")
 ##{ Read data --------------------------------------------------------------
 
 # get all files
-tsFiles <- list.files(paste(data_dir, "/_raw_/TS", sep=""), pattern="*.tethys", full=TRUE)
+tsFiles <- list.files(str_c(data_dir, "/_raw_/TS"), pattern="*.tethys", full=TRUE)
 ts <- ldply(tsFiles, function(file) {
   read.ts(file)
 }, .progress="text")
+
+# read coastline to plot the trajectories and check
+coast <- read.csv(str_c(data_dir, "/map/gshhg_coteazur.csv"))
+gcoast <- geom_polygon(aes(x=lon, y=lat), data=coast)
 
 # }
 
 ##{ Check the data --------------------------------------------------------
 
-# read coastline to plot the trajectories and check
-coast <- read.csv("map/gshhg_coteazur_f.csv")
-gcoast <- geom_polygon(aes(x=lon, y=lat), data=coast)
-
 # check trajectory
 ggplot(ts) + gcoast + geom_point(aes(x=lon, y=lat, colour=-depth), size=1, alpha=0.1, na.rm=T) + coord_map()
 
-# remove outliers
-ts <- ts[-which(ts$salinity < 31),]
+# check time series of all variables
+tsm <- melt(ts, id.vars=c("dateTimeUTC", "dateTime", "lon", "lat"))
+ggplot(tsm) + geom_point(aes(x=dateTime, y=value), size=1, alpha=0.1, na.rm=T) + facet_grid(variable~., scale="free_y")
+
+# remove obvious outliers (remove whole line)
+ts <- filter(ts, salinity > 31)
+ts <- filter(ts, fluorometry > 0.12)
+
+# there are possible artefacts at the beginning and end of records
+# TODO check wether to delete the line or replace by NA the wrong values
 
 # check T-S diagram
 ggplot(ts) + geom_point(aes(x=temperature, y=salinity), size=1.5, alpha=0.1, na.rm=T)
-
-# check time series of all variables
-tsm <- melt(ts, id.vars=c("dateTime", "lon", "lat"))
-ggplot(tsm) + geom_point(aes(x=dateTime, y=value), size=1.5, alpha=0.1, na.rm=T) + facet_wrap(~variable, scale="free_y")
 
 # }
 
