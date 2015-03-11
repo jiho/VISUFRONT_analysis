@@ -104,13 +104,18 @@ h5$transect <- "cc5"
 h <- rbind(h4, h5)
 
 # total number of casts
-nrow(unique(select(h, transect, cast))
+nrow(unique(select(h, transect, cast)))
+# 101
 
 # keep only down casts (the biological data is on downcasts only)
 h <- filter(h, down.up=="down")
 
 # keep only the transects x cast investigated in the biological data
 h <- filter(h, interaction(transect, profile) %in% unique(interaction(d$transect, d$profile)))
+
+# total number of casts with biological data
+nrow(unique(select(h, transect, cast)))
+# 20
 
 # parse date and time
 options(digits.secs=2)

@@ -6,6 +6,11 @@
 #
 #--------------------------------------------------------------------------
 
+# Give path to data directory
+data_dir_path <- function() {
+  return("~/Dropbox/visufront-data/")
+}
+
 # Read thermosalinometer from Tethys
 read.ts <- function(file) {
   library("lubridate")
