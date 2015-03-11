@@ -1,5 +1,8 @@
 # Check relative positions and time
 
+source("lib_process.R")
+data_dir <- data_dir_path()
+
 library("gdata")
 library("lubridate")
 library("stringr")
@@ -7,14 +10,11 @@ library("plyr")
 library("dplyr")
 library("ggplot2")
 
-source("lib_process.R")
-
-data_dir <- "~/Dropbox/visufront-data/"
 
 # read drifter trajectories
-d <- read.xls(str_c(data_dir, "drifters/drifters.xls"), na.strings="", stringsAsFactors=FALSE)
-b <- read.xls(str_c(data_dir, "drifters/boa.xls"), na.strings="", stringsAsFactors=FALSE)
-f <- read.xls(str_c(data_dir, "drifters/float.xls"), na.strings="", stringsAsFactors=FALSE)
+d <- read.xls(str_c(data_dir, "/drifters/drifters.xls"), na.strings="", stringsAsFactors=FALSE)
+b <- read.xls(str_c(data_dir, "/drifters/boa.xls"), na.strings="", stringsAsFactors=FALSE)
+f <- read.xls(str_c(data_dir, "/drifters/float.xls"), na.strings="", stringsAsFactors=FALSE)
 
 # compute lat and lon for boa
 latBits <- str_split_fixed(b$lat, fixed("."), 2)
