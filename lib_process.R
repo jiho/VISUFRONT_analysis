@@ -137,7 +137,7 @@ dist.from.shore <- function(lat, lon) {
 
 	# find the point on the coast closest to this point
 	# TODO should find the point of intersection between the coast and the axis of the transect
-	coast <- read.csv("map/gshhg_coteazur_i.csv")
+	coast <- read.csv(paste0(data_dir_path(), "/map/gshhg_coteazur_i.csv"))
 	library("oce")
 	dists <- geodDist(lon1=coast$lon, lat1=coast$lat, lon2=base_point_lon, lat2=base_point_lat)
 	minIdx <- which.min(dists)
