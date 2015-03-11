@@ -21,7 +21,7 @@ library("oce")
 ##{ Read ISIIS hydro data --------------------------------------------------
 
 # get data
-hydroFiles <- list.files(str_c(data_dir, "/ISIIShydro"), pattern=glob2rx("ISIIS*.txt"), full=TRUE)
+hydroFiles <- list.files(str_c(data_dir, "/_raw_/ISIIShydro"), pattern=glob2rx("ISIIS*.txt"), full=TRUE)
 d <- ldply(hydroFiles, function(file) {
 	read.isiis(file)
 }, .progress="text")

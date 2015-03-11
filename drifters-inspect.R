@@ -12,9 +12,9 @@ library("ggplot2")
 
 
 # read drifter trajectories
-d <- read.xls(str_c(data_dir, "/drifters/drifters.xls"), na.strings="", stringsAsFactors=FALSE)
-b <- read.xls(str_c(data_dir, "/drifters/boa.xls"), na.strings="", stringsAsFactors=FALSE)
-f <- read.xls(str_c(data_dir, "/drifters/float.xls"), na.strings="", stringsAsFactors=FALSE)
+d <- read.xls(str_c(data_dir, "/_raw_/drifters/drifters.xls"), na.strings="", stringsAsFactors=FALSE)
+b <- read.xls(str_c(data_dir, "/_raw_/drifters/boa.xls"), na.strings="", stringsAsFactors=FALSE)
+f <- read.xls(str_c(data_dir, "/_raw_/drifters/float.xls"), na.strings="", stringsAsFactors=FALSE)
 
 # compute lat and lon for boa
 latBits <- str_split_fixed(b$lat, fixed("."), 2)

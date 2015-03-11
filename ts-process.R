@@ -20,7 +20,7 @@ library("dplyr")
 ##{ Read data --------------------------------------------------------------
 
 # get all files
-tsFiles <- list.files(paste(data_dir, "/TS", sep=""), pattern="*.tethys", full=TRUE)
+tsFiles <- list.files(paste(data_dir, "/_raw_/TS", sep=""), pattern="*.tethys", full=TRUE)
 ts <- ldply(tsFiles, function(file) {
   read.ts(file)
 }, .progress="text")
