@@ -6,22 +6,21 @@
 #
 #------------------------------------------------------------
 
-data <- str_c("~/Dropbox/visufront-data/")
-
+source("lib_process.R")
+data_dir <- data_dir_path()
 
 library("ggplot2")
 library("reshape2")
-library("lubridate")
+library("lubridate"))
 library("stringr")
 library("plyr")
 library("dplyr")
 
-source("lib_process.R")
 
 ##{ Read data --------------------------------------------------------------
 
 # get all files
-tsFiles <- list.files(paste(data, "TS", sep=""), pattern="*.tethys", full=TRUE)
+tsFiles <- list.files(paste(data_dir, "/TS", sep=""), pattern="*.tethys", full=TRUE)
 ts <- ldply(tsFiles, function(file) {
   read.ts(file)
 }, .progress="text")
@@ -53,7 +52,7 @@ ggplot(tsm) + geom_point(aes(x=dateTime, y=value), size=1.5, alpha=0.1, na.rm=T)
 ##{ Cut by transect -------------------------------------------------------
 
 # read transects limits
-transects <- read.csv(str_c(data, "transects.csv"), na.strings=c("", "NA"))
+transects <- read.csv(str_c(data_dir, "transects.csv"), na.strings=c("", "NA"))
 transects$dateTimeStart <- ymd_hms(transects$dateTimeStart)
 transects$dateTimeEnd <- ymd_hms(transects$dateTimeEnd)
 
@@ -77,8 +76,9 @@ ts_in_transects <- ddply(transects, ~name, function(x, data) {
     print(ggplot(cData) + gcoast + geom_point(aes(x=lon, y=lat, colour=distance_from_shore), size=1, alpha=0.3, na.rm=T) + coord_map() + ggtitle(x$name))
 
     # store data file
-    dir.create(str_c("transects/", x$name), showWarnings=FALSE, recursive=TRUE)
-    write.csv(cData, file=str_c("transects/", x$name, "/ts.csv"), row.names=FALSE)
+    output_dir <- str_c(data_dir, "/transects/", x$name)
+    dir.create(output_dir, showWarnings=FALSE, recursive=TRUE)
+    write.csv(cData, file=str_c(output_dir, "/ts.csv"), row.names=FALSE)
   }
 
 	return(cData)
@@ -88,8 +88,8 @@ dev.off()
 # system("open ts-transects.pdf")
 
 # write the complete record
-write.csv(ts, file="ts.csv", row.names=FALSE)
-write.csv(ts_in_transects, file="ts_in_transects.csv", row.names=FALSE)
+write.csv(ts, file=str_c(data_dir, "/ts_all.csv"), row.names=FALSE)
+write.csv(ts_in_transects, file=str_c(data_dir, "/ts_in_transects.csv"), row.names=FALSE)
 
 # }
 

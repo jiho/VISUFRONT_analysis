@@ -6,6 +6,9 @@
 #
 #--------------------------------------------------------------------------
 
+source("lib_process.R")
+data_dir <- data_dir_path()
+
 library("plyr")
 library("stringr")
 library("oce")
@@ -17,7 +20,7 @@ library("circular")
 
 
 # Concatenate all GPS files
-gpsFiles <- list.files("/Users/faillettaz/Dropbox/visufront-data/gps/", pattern=glob2rx("gps*"), full=TRUE)
+gpsFiles <- list.files(str_c(data_dir, "/gps"), pattern=glob2rx("gps*"), full=TRUE)
 gps <- alply(gpsFiles, 1, function(file) {
   # read the content of the file
   content <- scan(file, what="character", sep="\n", fileEncoding="ISO-8859-1", encoding="UTF-8")

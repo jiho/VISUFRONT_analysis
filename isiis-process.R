@@ -6,7 +6,8 @@
 #
 #--------------------------------------------------------------------------
 
-data <- "~/Dropbox/visufront-data/"
+source("lib_process.R")
+data_dir <- data_dir_path()
 
 library("lubridate")
 library("stringr")
@@ -16,13 +17,11 @@ library("plyr")
 library("dplyr")
 library("oce")
 
-source("lib_process.R")
-
 
 ##{ Read ISIIS hydro data --------------------------------------------------
 
 # get data
-hydroFiles <- list.files(str_c(data, "ISIIShydro"), pattern=glob2rx("ISIIS*.txt"), full=TRUE)
+hydroFiles <- list.files(str_c(data_dir, "/ISIIShydro"), pattern=glob2rx("ISIIS*.txt"), full=TRUE)
 d <- ldply(hydroFiles, function(file) {
 	read.isiis(file)
 }, .progress="text")
@@ -66,7 +65,7 @@ id_vars <- c("dateTimeMsec", "Pressure.dbar", "Depth.m")
 ##{ Add lat/lon -----------------------------------------------------------
 
 # read TS record, which contains GPS location
-ts <- read.csv(str_c(data, "TS/ts.csv"), stringsAsFactors=FALSE)
+ts <- read.csv(str_c(data_dir, "/ts_all.csv"), stringsAsFactors=FALSE)
 ts$dateTime <- ymd_hms(ts$dateTime)
 
 # round ISIIS time to the second, to match with the ship's GPS
