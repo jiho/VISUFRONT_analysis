@@ -34,9 +34,9 @@ read.ts <- function(file) {
   month <- str_sub(file, -11, -10)
   day <- str_sub(file, -9, -8)
   midnight <- ymd_hms(str_c(year, "-", month, "-", day, " 00:00:01"))
-  d$dateTime <- midnight + d$timeUTC
+  d$dateTimeUTC <- midnight + d$timeUTC
   # convert into local time
-  d$dateTime <- d$dateTime + 2*3600
+  d$dateTime <- with_tz(d$dateTimeUTC, tz="Europe/Paris")
 
   # fill the gaps in GPS coordinates when necessary
   if (any(is.na(d$lat))) {
@@ -45,7 +45,7 @@ read.ts <- function(file) {
   }
 
   # select interesting data columns
-  d <- d[,c("dateTime", "lat", "lon", "atmPressure", "tempAir", "humidity", "windDirection", "windSpeed", "depth", "temperature", "salinity", "fluorometry")]
+  d <- d[,c("dateTimeUTC", "dateTime", "lat", "lon", "atmPressure", "tempAir", "humidity", "windDirection", "windSpeed", "depth", "temperature", "salinity", "fluorometry")]
 
 	return(d)
 }

@@ -52,9 +52,9 @@ ggplot(tsm) + geom_point(aes(x=dateTime, y=value), size=1.5, alpha=0.1, na.rm=T)
 ##{ Cut by transect -------------------------------------------------------
 
 # read transects limits
-transects <- read.csv(str_c(data_dir, "transects.csv"), na.strings=c("", "NA"))
-transects$dateTimeStart <- ymd_hms(transects$dateTimeStart)
-transects$dateTimeEnd <- ymd_hms(transects$dateTimeEnd)
+transects <- read.csv(str_c(data_dir, "/transects.csv"), na.strings=c("", "NA"))
+transects$dateTimeStart <- ymd_hms(transects$dateTimeStart, tz="Europe/Paris")
+transects$dateTimeEnd <- ymd_hms(transects$dateTimeEnd, tz="Europe/Paris")
 
 # add transect name to the file
 
