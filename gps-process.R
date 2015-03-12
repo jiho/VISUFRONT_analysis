@@ -17,6 +17,8 @@ library("ggplot2")
 library("lubridate")
 library("discuss")
 library("circular")
+library("gridExtra")
+library("geosphere")
 
 
 # Concatenate all GPS files
@@ -136,11 +138,10 @@ dateTimeUTC <- ymd_hms(dateTime) - 2 * 3600# - 7
 gpsDf <- data.frame(lat, lon, dateTimeUTC)
 head(gpsDf)
 tail(gpsDf)
-
 gpsDf <- filter(gpsDf, !is.na(lon))
 
 
-# Cut into transects
+# # Cut into transects
 # transects <- read.csv("transects.csv", na.strings="", sep = ";", colClasses=c("character", "POSIXct", "POSIXct"))
 #
 # d_ply(transects, ~name, function(x, gps) {
@@ -158,7 +159,7 @@ gpsDf <- filter(gpsDf, !is.na(lon))
 #   }
 #
 # }, gps=gps)
-
+#
 
 
 
@@ -198,7 +199,7 @@ grid.arrange(p1, p2, ncol = 2)
 
 # Read thermosalinometer from Tethys
 # get all files
-tsFiles <- list.files("/Users/faillettaz/Dropbox/visufront-data/TS", pattern="*.tethys", full=TRUE)
+tsFiles <- list.files(str_c(data_dir,"_raw_/TS"), pattern="*.tethys", full=TRUE)
 
 ts <- adply(tsFiles, 1, function(file) {
 	
@@ -239,6 +240,7 @@ ts <- ts[,-1]
 head(ts)
 
 
+
 # # We have access to the bearing of the boat every 15s
 
 
@@ -248,8 +250,7 @@ head(ts)
 
 
 # Extract data from the lagrangian experiment
-tsLag <- filter(ts, dateTimeUTC > ymd_hms("2013-07-26 17:07:00") & dateTimeUTC < ymd_hms("2013-07-28 02:10:00"))
-# For some reasons, the time are wrong
+tsLag <- filter(ts, dateTimeUTC > ymd_hms("2013-07-26 21:30:00") & dateTimeUTC < ymd_hms("2013-07-28 05:24:00"))
 ggplot() + geom_path(data= tsLag, aes(x = lon, y = lat))
 
 # Check bearings distribution
@@ -261,13 +262,18 @@ ggplot(data = filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 21:33:00") & dateT
 # Very straight, this is good.
 
 
+# Check path and bearing
+ggplot(data = filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 21:33:00") & dateTimeUTC < ymd_hms("2013-07-28 05:24:00")), aes(x = lon, y = lat)) + geom_path() + geom_point(aes(color = bearing)) + coord_quickmap()
+
+
+
 
 # Compare gps from TS and gps GPGGA
 ggplot() + 
 # TS data
-geom_path(data = filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:09:50")), aes(x = lon, y = lat), colour = "red") + geom_point(data = filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:09:50")), aes(x = lon, y = lat), colour = "red") +
+geom_path(data = filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:03:50")), aes(x = lon, y = lat), colour = "red") + geom_point(data = filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:03:50")), aes(x = lon, y = lat), colour = "red") +
 # GPS GPGGA data
-geom_path(data = filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:09:50")), aes(x = lon, y = lat)) + geom_point(data = filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:09:50")), aes(x = lon, y = lat)) + coord_cartesian(xlim = c(7.56, 7.562), ylim = c(43.632, 43.634))
+geom_path(data = filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:03:50")), aes(x = lon, y = lat)) + geom_point(data = filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:03:50")), aes(x = lon, y = lat)) + coord_map() #+ coord_cartesian(xlim = c(7.56, 7.562), ylim = c(43.632, 43.634))
 # ggsave(file = "plot/gps_TS_GPGAA.pdf")
 
 
