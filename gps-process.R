@@ -603,3 +603,13 @@ bearings <- filter(arrange(rbind(gps1s, Ts1s), dateTimeUTC), !is.na(bearing))
 # bearing per seconde
 write.table(select(bearings, -transect), file = "bearing-visufront-GPS_RAW_1SEC-TS_INTERP_1SEC.txt", fileEncoding = "ASCII", append = F, row.names = F, sep = ";")
 
+
+
+# Combine raw GPS 1s and raw TS 15s
+# --------------------------------------------------------------------
+bearingsRaw <- filter(arrange(rbind(select(gps1s, -transect), tsLag15s), dateTimeUTC), !is.na(bearing))
+head(bearingsRaw)
+write.table(bearingsRaw, file = "bearing-visufront-GPS_RAW_1SEC-TS_RAW_15SEC.txt", fileEncoding = "ASCII", append = F, row.names = F, sep = ";")
+
+
+
