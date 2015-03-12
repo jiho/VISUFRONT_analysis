@@ -417,7 +417,7 @@ interp.time <- function(x, y, y.name, x.step=1,  ...) {
 
 
 # Run interpolation of lon, lat, bearing and sd per second
-gpsAll <- adply(transects$name, 1, function(x) {
+gpsAll <- adply(transects$name[c(3,4,5)], 1, function(x) {
 	
 	# transect <- transects[2,]
 	transect <- filter(transects, name == x)
@@ -463,6 +463,8 @@ ddply(gpsAll, ~transect, summarize, mean = mean(bearing), sd = mean(sd))
 # 12 lagrangian_13 202.45207 0.08436959
 # 13 lagrangian_14  20.74815 0.07068693
 # 14 lagrangian_15 205.71080 0.06690580
+
+
 
 
 
@@ -517,4 +519,87 @@ tsLag15s <- cbind(select(tsLag15s, dateTimeUTC, lon, lat, bearing), sd = rep(0, 
 
 write.table(tsLag15s, file = "bearing-visufront-from-TS-15SEC.txt", fileEncoding = "ASCII", append = F, row.names = F, sep = ";")
 
+
+
+
+
+
+# Extract raw position data and interpolate per 1s FOR TS
+# --------------------------------------------------------------------
+Ts1s <- adply(transects$name[c(3,4,5)], 1, function(x) {
+	
+	# transect <- transects[3,]
+	transect <- filter(transects, name == x)
+	# print(transect)
+	
+	# Select data (-+60 s to start having good data at the begining of the transects)
+	gps <- tsLag[which(tsLag$dateTimeUTC > (ymd_hms(transect$dateTimeStart) - 2 * 3600 - 60) & tsLag$dateTimeUTC < (ymd_hms(transect$dateTimeEnd) - 2 * 3600 + 30)), ]
+	
+	# Compute bearing between each point and the next one (1s)
+	gps$bearing_gps <- NA
+	for (i in 1:(nrow(gps)-1)) {
+		gps$bearing_gps[i] <- bearing(select(gps, lon, lat)[i,], select(gps, lon, lat)[i+1,])
+	}
+	
+	# add true bearing if available
+	if (!is.na(gps$bearingTrue[nrow(gps)]) & is.na(gps$bearing[nrow(gps)])) {
+	gps$bearing_gps[nrow(gps)] <- gps$bearingTrue[nrow(gps)]
+	}
+	
+	if (is.na(gps$bearingTrue[nrow(gps)]) & !is.na(gps$bearing[nrow(gps)])) {
+	gps$bearing_gps[nrow(gps)] <- gps$bearing[nrow(gps)]
+	}
+	
+	
+	# Interpolation
+	lontmp <- interp.time(x = gps$dateTimeUTC, y = gps$lon, x.step = 1, y.name = "lon")
+	lattmp <- interp.time(x = gps$dateTimeUTC, y = gps$lat, x.step = 1, y.name = "lat")
+	bearingtmp <- interp.time(x = gps$dateTimeUTC, y = gps$bearing_gps, x.step = 1, y.name = "bearing")
+
+	# format data
+	data.frame(transect = rep(transect$name, nrow(lontmp)), dateTimeUTC = lontmp$dateTimeSec, lon = round_any(lontmp$lon, 0.00001), lat = round_any(lattmp$lat, 0.00001), bearing = round_any(bearingtmp$bearing, 0.001))
+})
+Ts1s <- Ts1s[, -1]
+head(Ts1s)
+tail(Ts1s)
+
+Ts1s <- filter(Ts1s, !is.na(bearing))
+
+
+
+# Extract raw position data per 1s WITH GPS
+# --------------------------------------------------------------------
+gps1s <- adply(transects$name[-c(3,4,5)], 1, function(x) {
+	
+	transect <- transects[2,]
+	transect <- filter(transects, name == x)
+	# print(transect)
+	
+	# Select data (-+60 s to start having good data at the begining of the transects)
+	gps <- gpsLag[which(gpsLag$dateTimeUTC > (ymd_hms(transect$dateTimeStart) - 2 * 3600 - 60) & gpsLag$dateTimeUTC < (ymd_hms(transect$dateTimeEnd) - 2 * 3600 + 30)), ]
+	
+	# Compute bearing between each point and the next one (1s)
+	gps$bearing_gps <- NA
+	for (i in 1:(nrow(gps)-1)) {
+		gps$bearing_gps[i] <- bearing(select(gps, lon, lat)[i,], select(gps, lon, lat)[i+1,])
+	}
+		
+
+	# format data
+	data.frame(transect = rep(transect$name, nrow(gps)), dateTimeUTC = gps$dateTimeUTC, lon = round_any(gps$lon, 0.00001), lat = round_any(gps$lat, 0.00001), bearing = round_any(gps$bearing_gps, 0.001))
+}, .progress = "text")
+gps1s <- gps1s[, -1]
+head(gps1s)
+tail(gps1s)
+gps1s <- filter(gps1s, !is.na(bearing))
+
+
+
+
+# Combine raw GPS 1s with interp TS 1s
+# --------------------------------------------------------------------
+bearings <- filter(arrange(rbind(gps1s, Ts1s), dateTimeUTC), !is.na(bearing))
+
+# bearing per seconde
+write.table(select(bearings, -transect), file = "bearing-visufront-GPS_RAW_1SEC-TS_INTERP_1SEC.txt", fileEncoding = "ASCII", append = F, row.names = F, sep = ";")
 
