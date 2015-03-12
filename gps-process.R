@@ -281,98 +281,240 @@ geom_path(data = filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & d
 
 # Compute bearing of from the GPS data for the 2 min period
 # --------------------------------------------------------------------
-gps2m <- filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:09:50"))
-gps2m$angle.rad <- NA
-
+gps2m <- filter(gpsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:03:50"))
 
 # Compute bearing between each point and the next one (1s)
+gps2m$bearing_gps <- NA
 for (i in 1:(nrow(gps2m)-1)) {
-    a <- geodDist(gps2m$lat[i+1], gps2m$lon[i+1], gps2m$lat[i], gps2m$lon[i])
-    b <- geodDist(gps2m$lat[i], gps2m$lon[i], gps2m$lat[i+1], gps2m$lon[i])
-    # check if positive values and correct if 
-    if (gps2m$lon[i+1] < gps2m$lon[i]) {
-    a <- -a
-    }
-    if (gps2m$lat[i+1] < gps2m$lat[i]) {
-    b <- -b
-    }
-    gps2m$angle.rad[i+1] <- atan2(b, a)
+	gps2m$bearing_gps[i] <- bearing(select(gps2m, lon, lat)[i,], select(gps2m, lon, lat)[i+1,])
 }
-# convert to angle data
-gps2m$angle.rad <- as.trig(gps2m$angle.rad)  # set it as angles
-gps2m$bearing_gps <- as.bearing(gps2m$angle.rad)  # convert to 360° angles
-gps2m <- rename(gps2m, lon_gps = lon, lat_gps = lat)
-
-
-# Compute the mean bearing over 15s from the GPS GPGGA data
-gps2m$group <- rep(1:round_any(nrow(gps2m)/15, 1), each = 15)[-nrow(gps2m)-1]
-
 
 
 
 # Extract the same time period of the TS data
-ts2m <- filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:09:50"))
-ts2m$angle.rad_ts <- NA
-
+ts2m <- filter(tsLag, dateTimeUTC > ymd_hms("2013-07-26 22:00:04") & dateTimeUTC < ymd_hms("2013-07-26 22:03:50"))
 
 # Compute bearing between each point and the next one (1s)
+ts2m$bearing_ts <- NA
 for (i in 1:(nrow(ts2m)-1)) {
-    a <- geodDist(ts2m$lat[i+1], ts2m$lon[i+1], ts2m$lat[i], ts2m$lon[i])
-    b <- geodDist(ts2m$lat[i], ts2m$lon[i], ts2m$lat[i+1], ts2m$lon[i])
-    # check if positive values and correct if 
-    if (ts2m$lon[i+1] < ts2m$lon[i]) {
-    a <- -a
-    }
-    if (ts2m$lat[i+1] < ts2m$lat[i]) {
-    b <- -b
-    }
-    ts2m$angle.rad_ts[i+1] <- atan2(b, a)
+	ts2m$bearing_ts[i] <- bearing(select(ts2m, lon, lat)[i,], select(ts2m, lon, lat)[i+1,])
 }
-# convert to angle data
-ts2m$angle.rad_ts <- as.trig(ts2m$angle.rad_ts)  # set it as angles
-ts2m$bearing_ts <- as.bearing(ts2m$angle.rad_ts)  # convert to 360° angles
+
+
+
+# # Compare visually
+# ggplot() + geom_point(data = ts2m, aes(x = lon, y = lat, colour = bearing_ts)) + geom_point(data = gps2m, aes(x = lon, y = lat, colour = as.numeric(bearing_gps))) + coord_map()
+
+# Compare means
+# GPS FROM TS and RAW BEARING FROM TS
+mean(na.omit(ts2m$bearing_ts)) - mean(na.omit(ts2m$bearing)) # ~3.7°
+# GPS GPGGA and RAW BEARING FROM TS
+mean(na.omit(gps2m$bearing_gps)) - mean(na.omit(ts2m$bearing)) # ~2.5°
+# GPS GPGGA and GPS FROM TS
+mean(na.omit(gps2m$bearing_gps)) - mean(na.omit(ts2m$bearing_ts)) # ~1.2°
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# TS RAW BEARINGS ARE USABLE but less precise
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 
 
-# Join the two traj with their bearing
-ts_gps <- join(ts2m, gps2m)
-
-select(ts_gps, bearing, bearing_gps)
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# TS RAW BEARINGS ARE UNUSABLE
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-select(ts_gps, bearing_ts, bearing_gps)
-# But calculated bearing seems ok. 
 
 
 
+# COMPUTE MEAN BEARING PER MIN AND CREATE TABLE FILE 
+# --------------------------------------------------------------------
 
-# Join GPS with TS data
-
-# Some means are biased by just one point (e.g. mean = 310°, and 1 is 40°)
-# But it's very similar on average which is good. 
-# We can add a filter that removes the data for which the diff in bearing is too high and due to a lack of accuracy of gps data
+# Split by transect
+transects <- read.csv("transects.csv", na.strings="", sep = ";", colClasses=c("character", "POSIXct", "POSIXct"))[15:28, ]
 
 
-ts_gps <- cbind(select(ts2m, lon, lat, bearing_ts, dateTimeUTC), ddply(gps2m, ~group, function(x) { 
-	# x <- gps2m[which(gps2m$group == 7), ]
+# Subset data to work on fewer first
+gpsLag <- filter(gpsDf, dateTimeUTC > ymd_hms("2013-07-26 21:30:00") & dateTimeUTC < ymd_hms("2013-07-28 05:25:00"))
+range(gpsLag$dateTimeUTC)
+
+
+
+gps1mAll <- adply(transects$name, 1, function(x) {
 	
-	# FILTER BIASED CHANGES IN BEARING
-	x <- x[which(diff(x$bearing_gps) < abs(30)), ]
-	mean = mean.circular(as.bearing(x$bearing_gps))
-	lon = max(x$lon_gps)
-	lat = min(x$lat_gps)
+	# x <- transects$name[1]
+	transect <- filter(transects, name == x)
 	
-	data.frame(mean_bearing_gps = mean, lon_gps = lon, lat_gps = lat)
-}))
+	gps <- filter(gpsLag, dateTimeUTC > (ymd_hms(transect$dateTimeStart) - 2 * 3600 - 60) & dateTimeUTC < (ymd_hms(transect$dateTimeEnd) - 2 * 3600 + 60))
+	
+	# if 1s gps data are not available, read gps from TS
+	if (transect$name %in% c("lagrangian_3", "lagrangian_4", "lagrangian_5")) {
+		gps <- filter(ts, dateTimeUTC > (ymd_hms(transect$dateTimeStart) - 2 * 3600 - 60) & dateTimeUTC < (ymd_hms(transect$dateTimeEnd) - 2 * 3600 + 60))
+	}
+
+	# Compute bearing between each point and the next one (1s)
+	gps$bearing <- NA
+	for (i in 1:(nrow(gps)-1)) {
+		gps$bearing[i] <- bearing(select(gps, lon, lat)[i,], select(gps, lon, lat)[i+1,])
+	}
 
 
-# Compute difference between mean bearing from gps and from ts
-mean(na.omit(as.numeric(ts_gps$mean_bearing_gps) - as.numeric(ts_gps$bearing_ts)))
-# MEAN OF -0.1147336° OF DIFFERENCE BETWEEN THE TOO. GOOD. 
+	# Compute the mean bearing over 1m from the GPS GPGGA data
+	gps$dateTimeUTC_min <- round_any(gps$dateTimeUTC, 60)
+	
+	# Remove the last line that will never have a bearing
+	gps <- gps[-nrow(gps), ]
+	
+	gps_1m <- ddply(gps, ~dateTimeUTC_min, function(x) {
+		
+		# print(unique(x$dateTimeUTC_min))
+		
+		# x <- gps[which(gps$dateTimeUTC_min == ymd_hms("2013-07-26 21:33:00")), ]
+
+		# filter large changes in bearing within minutes
+		if (nrow(x) > 1 & any(diff(x$bearing_gps) < abs(30))) {
+	  	x <- x[which(diff(x$bearing_gps) < abs(30)), ]
+		}
+		
+		# Compute circular mean and sd
+	  	mean <- mean.circular(as.bearing(x$bearing))
+		sd <- sd.circular(as.bearing(x$bearing))
+		
+		
+		# Get the mean lon and lat instead of the min of max no to loose the beginning and end
+		lon <- mean(x$lon)
+		lat <- mean(x$lat)
+	
+	  	data.frame(lon = lon, lat = lat, mean_bearing_gps = mean, sd = sd)
+		
+	  })
+
+}, .progress = "text")
+gps1mAll <- gps1mAll[, -1]
+head(gps1mAll)
+# tail(gps1mAll)
+# gps1mAll[1:100,]
 
 
-# # Compare gps from TS and gps GPGGA visually
-# ggplot() + geom_point(data = ts_gps_2m, aes(x = lon, y = lat, colour = bearing_ts)) + geom_point(data = ts_gps_2m, aes(x = lon_gps, y = lat_gps, colour = mean_bearing))
+
+
+# Interpolate bearing and lon lat to get 1s time steps
+# --------------------------------------------------------------------
+
+# Interpolate a slice of data for which the x-axis is time
+interp.time <- function(x, y, y.name, x.step=1,  ...) {
+
+  # interpolate as numbers
+  time <- as.numeric(x)
+  i <- approx(x = time, y = y, xout = seq(min(time), max(time), by=x.step))
+
+  # extract a data.frame
+  out <- data.frame(dateTimeSec = i$x, var = i$y)
+  colnames(out) <- c("dateTimeSec", y.name)
+
+  # reconvert to time
+  out$dateTimeSec <- as.POSIXct(out$dateTimeSec, origin=as.POSIXct("1970-01-01 01:00:00.00"))
+  # range(out$dateTimeSec)
+  return(out)
+}
+
+
+
+# Run interpolation of lon, lat, bearing and sd per second
+gpsAll <- adply(transects$name, 1, function(x) {
+	
+	# transect <- transects[2,]
+	transect <- filter(transects, name == x)
+	# print(transect)
+	
+	# Select data (-+60 s to start having good data at the begining of the transects)
+	gps <- gps1mAll[which(gps1mAll$dateTimeUTC_min > (ymd_hms(transect$dateTimeStart) - 2 * 3600 - 60) & gps1mAll$dateTimeUTC_min < (ymd_hms(transect$dateTimeEnd) - 2 * 3600 + 30)), ]
+	
+	# Interpolation
+	lontmp <- interp.time(x = gps$dateTimeUTC_min, y = gps$lon, x.step = 1, y.name = "lon")
+	lattmp <- interp.time(x = gps$dateTimeUTC_min, y = gps$lat, x.step = 1, y.name = "lat")
+	bearingtmp <- interp.time(x = gps$dateTimeUTC_min, y = gps$mean_bearing_gps, x.step = 1, y.name = "bearing")
+	bearingsdtmp <- interp.time(x = gps$dateTimeUTC_min, y = gps$sd, x.step = 1, y.name = "sd")
+
+	# format data
+	data.frame(transect = rep(transect$name, nrow(lontmp)), dateTimeUTC = lontmp$dateTimeSec, lon = round_any(lontmp$lon, 0.00001), lat = round_any(lattmp$lat, 0.00001), bearing = round_any(bearingtmp$bearing, 0.001), sd = round_any(bearingsdtmp$sd, 0.005))
+})
+gpsAll <- gpsAll[, -1]
+head(gpsAll)
+# tail(gpsAll)
+
+
+
+# inspect visually
+ggplot() + geom_point(data= gpsAll, aes(x = lon, y = lat, colour = bearing)) + geom_path(data = tsLag, aes(x = lon, y = lat)) + coord_map()
+# ggsave("traj_bearing.pdf")
+
+
+
+ddply(gpsAll, ~transect, summarize, mean = mean(bearing), sd = mean(sd))
+#         transect      mean         sd
+# 1   lagrangian_1 331.88962 0.08937468
+# 2   lagrangian_2 153.10690 0.07772209
+# 3   lagrangian_3 333.00891 0.01130073
+# 4   lagrangian_4 171.87109 0.01670370
+# 5   lagrangian_5 342.12104 0.01067944
+# 6   lagrangian_6 162.39459 0.07202128
+# 7   lagrangian_7 338.51732 0.09358875
+# 8   lagrangian_8 161.56685 0.11271465
+# 9   lagrangian_9 331.38366 0.09541660
+# 10 lagrangian_11 180.59167 0.07172279
+# 11 lagrangian_12  11.91548 0.07700975
+# 12 lagrangian_13 202.45207 0.08436959
+# 13 lagrangian_14  20.74815 0.07068693
+# 14 lagrangian_15 205.71080 0.06690580
+
+
+
+
+# Write TXT file
+# --------------------------------------------------------------------
+
+# bearing per seconde
+write.table(select(gpsAll, -transect), file = "bearing-visufront-from-GPS-1SEC.txt", fileEncoding = "ASCII", append = F, row.names = F, sep = ";")
+
+
+
+
+# bearing per minute
+gps1mAll$lon <- round_any(gps1mAll$lon, 0.00001)
+gps1mAll$lat <- round_any(gps1mAll$lat, 0.00001)
+gps1mAll$bearing <- as.numeric(round_any(gps1mAll$mean_bearing_gps, 0.001))
+gps1mAll$sd <- round_any(gps1mAll$sd, 0.001)
+gps1mAll <- select(rename(select(gps1mAll, -mean_bearing_gps), dateTimeUTC = dateTimeUTC_min), dateTimeUTC, lon, lat, bearing, sd)
+
+write.table(gps1mAll, file = "bearing-visufront-from-GPS-1MIN.txt", fileEncoding = "ASCII", append = F, row.names = F, sep = ";")
+
+
+
+
+
+# Extract raw bearing from the TS GPS (every 15s)
+tsLag15s <- adply(transects$name, 1, function(x) {
+	
+	# transect <- transects[2,]
+	transect <- filter(transects, name == x)
+	# print(transect)
+	
+	# Select data (-+60 s to start having good data at the begining of the transects)
+	gps <- tsLag[which(tsLag$dateTimeUTC > (ymd_hms(transect$dateTimeStart) - 2 * 3600 - 60) & tsLag$dateTimeUTC < (ymd_hms(transect$dateTimeEnd) - 2 * 3600 + 30)), ]
+	
+	# Compute bearing between each point and the next one (1s)
+	gps$bearing <- NA
+	for (i in 1:(nrow(gps)-1)) {
+		gps$bearing[i] <- round_any(bearing(select(gps, lon, lat)[i,], select(gps, lon, lat)[i+1,]), 0.001)
+	}
+	select(gps, dateTimeUTC, lon, lat, bearing)
+})
+head(tsLag15s)
+tail(tsLag15s)
+
+# Format data
+tsLag15s <- tsLag15s[-nrow(tsLag15s), -1]
+tsLag15s <- cbind(select(tsLag15s, dateTimeUTC, lon, lat, bearing), sd = rep(0, nrow(tsLag15s)))
+
+
+
+write.table(tsLag15s, file = "bearing-visufront-from-TS-15SEC.txt", fileEncoding = "ASCII", append = F, row.names = F, sep = ";")
+
+
