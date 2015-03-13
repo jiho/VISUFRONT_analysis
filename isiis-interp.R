@@ -71,9 +71,13 @@ l_ply(isiisFiles, function(file) {
   ei <- rbind(ei, ei_anom)
 
   plots <- dlply(ei, ~variable, function(Xi) {
-    ggplot(mapping=aes(x=Distance.km, y=-Depth.m, fill=value)) +
-      geom_raster(data=Xi) +
-      scale_fill_spectral() + labs(title=Xi$variable[1])
+    ggplot(data=Xi, mapping=aes(x=Distance.km, y=-Depth.m, fill=value)) +
+      geom_raster() +
+      geom_contour(aes(z=value), colour="white", alpha=0.8, size=0.3) +
+      scale_x_continuous(expand=c(0,0)) + scale_y_continuous(expand=c(0,0)) +
+      # scale_fill_gradient(low="black", high="white") +
+      scale_fill_spectral() +
+      labs(title=Xi$variable[1]) + theme_gray(10)
   })
   pdf(str_c(dir, "/isiis_interp.pdf"), width=10, height=16)
   plots$ncol <- 2
