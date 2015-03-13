@@ -13,6 +13,10 @@
 # TODO - with a coarse grid for joining with other data
 # TODO - with a fine grid (and possibly extrapolation) for plots
 
+source("lib_plot.R")
+source("lib_process.R")
+data_dir <- data_dir_path()
+
 library("reshape2")
 library("plyr")
 library("dplyr")
@@ -21,11 +25,8 @@ library("ggplot2")
 library("grid")       # for plots on a grid
 library("gridExtra")
 
-source("lib_plot.R")
-
 # get all isiis data
-isiisFiles <- list.files("transects", pattern="isiis.csv", full=TRUE, recursive=TRUE)
-# isiisFiles <- "transects/cross_current_4/isiis.csv"
+isiisFiles <- list.files(str_c(data_dir, "/transects"), pattern="isiis.csv", full=TRUE, recursive=TRUE)
 
 # interpolate all variables for each file
 l_ply(isiisFiles, function(file) {
