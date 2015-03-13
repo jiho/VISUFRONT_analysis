@@ -5,14 +5,19 @@
 #
 #--------------------------------------------------------------------------
 
+source("lib_process.R")
+data_dir <- data_dir_path()
+
+library("stringr")
 library("ggplot2")
+library("plyr")
 library("dplyr")
 
 # coastline, at various resolutions
-coast <- read.csv("map/gshhg_coteazur.csv")
+coast <- read.csv(str_c(data_dir, "/map/gshhg_coteazur.csv"))
 gcoast <- geom_polygon(aes(x=lon, y=lat), data=coast, fill="white")
 
-coasth <- read.csv("map/gshhg_coteazur_h.csv")
+coasth <- read.csv(str_c(data_dir, "/map/gshhg_coteazur_h.csv"))
 gcoasth <- geom_polygon(aes(x=lon, y=lat), data=coasth, fill="white")
 
 # mapping setup
@@ -20,13 +25,26 @@ setup <- list(coord_map(), scale_x_continuous(expand=c(0,0)), scale_y_continuous
 
 ##{ Map of surface transects -----------------------------------------------
 
-transects <- read.csv("ts_in_transect.csv")
+transects <- read.csv(str_c(data_dir, "/ts_in_transects.csv"))
 
+# remove test transect
 transects <- filter(transects, name != "test")
-range(transects$lat)
-range(transects$lon)
 
+# decompose transect name into transect type and number
+transects$type <- str_replace_all(transects$name, "_[0-9]+", "")
+transects$number <- str_replace_all(transects$name, "(((along_|cross_)current)|(lagrangian)|(monaco))_", "")
+
+# make a data.frame with the starting points of each transect
+starts <- ddply(transects, ~name, head, 1)
+
+# plots
 ggplot() + geom_path(aes(x=lon, y=lat, group=name), data=transects, alpha=0.7) + gcoasth + setup
+
+ggplot() +
+  geom_path(aes(x=lon, y=lat, group=name), data=transects, alpha=0.7) +
+  geom_text(aes(x=lon, y=lat, label=number), data=starts, alpha=0.7, size=3, hjust=1) +
+  gcoasth + setup +
+  facet_wrap(~type)
 
 # }
 
