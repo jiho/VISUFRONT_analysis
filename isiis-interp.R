@@ -24,6 +24,8 @@ library("stringr")
 library("ggplot2")
 library("grid")       # for plots on a grid
 library("gridExtra")
+# library("doParallel")
+# registerDoParallel(cores=4)
 
 # get all isiis data
 isiisFiles <- list.files(str_c(data_dir, "/transects"), pattern="isiis.csv", full=TRUE, recursive=TRUE)
@@ -87,4 +89,4 @@ l_ply(isiisFiles, function(file) {
   write.csv(dcast(ei, Distance.km+Depth.m~variable, value.var="value"), file=str_c(dir, "/isiis_interp.csv"),  row.names=FALSE)
   # TODO the oxygen looks marked by the original data resolution. probably a problem between up and down casts, because of laggy sensor. Look into this.
 
-})
+}, .parallel=FALSE)
