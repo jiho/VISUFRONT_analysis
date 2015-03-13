@@ -80,7 +80,7 @@ l_ply(isiisFiles, function(file) {
       scale_fill_spectral() +
       labs(title=Xi$variable[1]) + theme_gray(10)
   })
-  pdf(str_c(dir, "/isiis_interp.pdf"), width=10, height=16)
+  pdf(str_c(dir, "/isiis_interp.pdf"), width=15, height=15)
   plots$ncol <- 2
   do.call(grid.arrange, plots)
   dev.off()
