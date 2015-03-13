@@ -4,6 +4,7 @@ x <- "GPHDT,201.159,T"  # check = 3B
 x <- "GPHDT,199.867,T"   # check = 3D
 
 # checksum for end of lines in NMEA records
+# from code on: http://www.hhhh.org/wiml/proj/nmeaxor.html
 nmea_check <- function(x) {
   r <- charToRaw(x)
   check <- r[1]
