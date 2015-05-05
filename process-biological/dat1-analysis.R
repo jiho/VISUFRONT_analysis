@@ -634,7 +634,7 @@ head(iS)
 unique(iS$variable)
 
 # save data for next time
-#save(is, file = "physics.Rdata")
+#write.csv(iS, file = "physics.csv", row.names = F, quote = F)
 
  }
 

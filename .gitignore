@@ -1,6 +1,4 @@
-*.csv
 *.pdf
-transects/*
 *.bin
 .Rproj.user
 .Rhistory
