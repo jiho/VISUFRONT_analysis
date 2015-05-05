@@ -5,3 +5,10 @@ transects/*
 .Rproj.user
 .Rhistory
 
+.Rprofile
+data/bearing-visufront-GPS_RAW_1SEC-TS_INTERP_1SEC.txt
+data/bearing-visufront-GPS_RAW_1SEC-TS_RAW_15SEC.txt
+data/bearing-visufront-RAW-GPS-1SEC.txt
+data/bearing-visufront-from-GPS-1MIN.txt
+data/bearing-visufront-from-GPS-1SEC.txt
+data/bearing-visufront-from-TS-15SEC.txt
